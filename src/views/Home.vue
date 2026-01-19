@@ -163,7 +163,15 @@ const newGame = ref({
 })
 
 // 游戏类型选项
-const gameTypes = ['麻将', '扑克', '桥牌', '斗地主', '其他']
+const gameTypes = [
+  { text: '麻将', value: '麻将' },
+  { text: '扑克', value: '扑克' },
+  { text: '桥牌', value: '桥牌' },
+  { text: '斗地主', value: '斗地主' },
+  { text: '跑得快', value: '跑得快' },
+  { text: '炸金花', value: '炸金花' },
+  { text: '其他', value: '其他' }
+]
 
 // 加载数据
 onMounted(async () => {
@@ -193,7 +201,11 @@ async function loadUsers() {
 
 // 创建默认用户
 async function createDefaultUsers() {
-  const defaultUsers = ['玩家A', '玩家B', '玩家C', '玩家D']
+  const defaultUsers = [
+    '张三', '李四', '王五', '赵六',
+    '钱七', '孙八', '周九', '吴十',
+    '郑十一', '冯十二'
+  ]
   for (const nickname of defaultUsers) {
     await storage.add('users', {
       nickname,
@@ -216,7 +228,7 @@ function getUserName(userId) {
 
 // 游戏类型确认
 function onGameTypeConfirm({ selectedOptions }) {
-  newGame.value.gameType = selectedOptions[0].text
+  newGame.value.gameType = selectedOptions[0]
   showGameTypePicker.value = false
 }
 
