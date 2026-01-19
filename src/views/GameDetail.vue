@@ -9,9 +9,15 @@
       placeholder
     >
       <template #right>
+        <van-icon name="replay" @click="refreshData" style="margin-right: 12px;" />
         <van-icon name="share-o" @click="shareGame" />
       </template>
     </van-nav-bar>
+
+    <!-- 提示信息 -->
+    <van-notice-bar left-icon="info-o" color="#1989fa" background="#ecf9ff" v-if="game.status === 'playing'">
+      本地存储模式，点击右上角刷新图标查看最新数据
+    </van-notice-bar>
 
     <!-- 牌局信息 -->
     <div class="game-info">
@@ -217,6 +223,12 @@ async function loadData() {
       lastRoundScores.value = lastRecord.scores
     }
   }
+}
+
+// 手动刷新数据
+async function refreshData() {
+  await loadData()
+  showToast('数据已刷新')
 }
 
 // 提交记录

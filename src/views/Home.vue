@@ -3,9 +3,15 @@
     <!-- 顶部导航 -->
     <van-nav-bar title="打牌记账" fixed placeholder>
       <template #right>
+        <van-icon name="replay" size="18" @click="refreshGames" style="margin-right: 12px;" />
         <van-icon name="setting-o" size="18" @click="toSettings" />
       </template>
     </van-nav-bar>
+
+    <!-- 提示信息 -->
+    <van-notice-bar left-icon="info-o" color="#ff976a" background="#fff7cc" closeable>
+      每个设备独立存储数据，通过分享链接加入牌局
+    </van-notice-bar>
 
     <!-- 快速操作 -->
     <div class="quick-actions">
@@ -103,6 +109,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { showToast } from 'vant'
 import storage from '../utils/storage'
 import dayjs from 'dayjs'
 
@@ -246,6 +253,13 @@ function toJoinGame() {
 function toSettings() {
   router.push('/users')
 }
+
+// 刷新牌局列表
+async function refreshGames() {
+  await loadGames()
+  showToast('数据已刷新')
+}
+
 </script>
 
 <style scoped>
