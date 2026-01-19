@@ -6,7 +6,7 @@
 import syncManager from './syncManager'
 
 const DB_NAME = 'BookkingDB'
-const DB_VERSION = 1
+const DB_VERSION = 2  // 升级版本号以支持新的数据结构
 
 class Storage {
   constructor() {
@@ -41,11 +41,13 @@ class Storage {
           gameStore.createIndex('status', 'status', { unique: false })
         }
 
-        // 记录表（每一轮的得分记录）
+        // 记录表（每个玩家每轮的得分记录）
         if (!db.objectStoreNames.contains('records')) {
           const recordStore = db.createObjectStore('records', { keyPath: 'id', autoIncrement: true })
           recordStore.createIndex('gameId', 'gameId', { unique: false })
           recordStore.createIndex('roundNumber', 'roundNumber', { unique: false })
+          recordStore.createIndex('playerId', 'playerId', { unique: false })
+          recordStore.createIndex('gameRound', ['gameId', 'roundNumber'], { unique: false })
           recordStore.createIndex('timestamp', 'timestamp', { unique: false })
         }
       }

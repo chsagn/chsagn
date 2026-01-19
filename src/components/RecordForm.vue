@@ -2,41 +2,38 @@
   <div class="record-form">
     <div class="form-header">
       <h3>记录第{{ roundNumber }}局得分</h3>
-      <p class="tips">输入每位玩家的得分变化（赢为正数，输为负数）</p>
+      <p class="tips">输入您本局的得分（赢为正数，输为负数）</p>
     </div>
 
     <van-form @submit="onSubmit">
-      <div class="player-scores">
-        <div v-for="player in playerList" :key="player.userId" class="player-input">
-          <div class="player-name">
-            <van-icon name="user-o" />
-            <span>{{ player.userName }}</span>
-          </div>
-          <van-field
-            v-model.number="scores[player.userId]"
-            type="digit"
-            placeholder="0"
-            :rules="[{ required: true, message: '请输入得分' }]"
-          >
-            <template #button>
-              <div class="quick-buttons">
-                <van-button size="mini" @click="scores[player.userId] = (scores[player.userId] || 0) + 100">
-                  +100
-                </van-button>
-                <van-button size="mini" @click="scores[player.userId] = (scores[player.userId] || 0) - 100">
-                  -100
-                </van-button>
-              </div>
-            </template>
-          </van-field>
-        </div>
-      </div>
+      <!-- 选择自己 -->
+      <van-field
+        label="选择您的昵称"
+        :model-value="selectedPlayerName"
+        placeholder="请选择"
+        readonly
+        clickable
+        @click="showPlayerPicker = true"
+      />
 
-      <!-- 得分总和检查 -->
-      <div class="score-sum" :class="{ valid: isScoreSumValid, invalid: !isScoreSumValid }">
-        <van-icon :name="isScoreSumValid ? 'success' : 'warning-o'" />
-        <span>得分总和: {{ scoreSum }}</span>
-        <span v-if="!isScoreSumValid" class="error-tip">（应为0）</span>
+      <!-- 得分输入 -->
+      <div class="score-input-section">
+        <van-field
+          v-model.number="score"
+          type="number"
+          label="您的得分"
+          placeholder="请输入得分"
+          :rules="[{ required: true, message: '请输入得分' }]"
+        >
+          <template #button>
+            <div class="quick-buttons">
+              <van-button size="mini" @click="score = (score || 0) + 100">+100</van-button>
+              <van-button size="mini" @click="score = (score || 0) - 100">-100</van-button>
+              <van-button size="mini" @click="score = (score || 0) + 10">+10</van-button>
+              <van-button size="mini" @click="score = (score || 0) - 10">-10</van-button>
+            </div>
+          </template>
+        </van-field>
       </div>
 
       <!-- 备注 -->
@@ -45,6 +42,7 @@
         rows="2"
         autosize
         type="textarea"
+        label="备注"
         placeholder="添加备注（可选）"
         show-word-limit
         maxlength="100"
@@ -52,7 +50,7 @@
 
       <!-- 提交按钮 -->
       <div class="form-actions">
-        <van-button block type="primary" native-type="submit" :disabled="!isScoreSumValid">
+        <van-button block type="primary" native-type="submit" :disabled="!selectedPlayerId">
           确认提交
         </van-button>
         <van-button block plain @click="$emit('cancel')">
@@ -60,11 +58,20 @@
         </van-button>
       </div>
     </van-form>
+
+    <!-- 玩家选择器 -->
+    <van-popup v-model:show="showPlayerPicker" position="bottom" round>
+      <van-picker
+        :columns="playerColumns"
+        @confirm="onPlayerConfirm"
+        @cancel="showPlayerPicker = false"
+      />
+    </van-popup>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { showToast } from 'vant'
 
 const props = defineProps({
@@ -72,8 +79,8 @@ const props = defineProps({
     type: Array,
     required: true
   },
-  users: {
-    type: Array,
+  playerNames: {
+    type: Object,
     required: true
   },
   roundNumber: {
@@ -84,59 +91,61 @@ const props = defineProps({
 
 const emit = defineEmits(['submit', 'cancel'])
 
-// 得分数据
-const scores = ref({})
+// 表单数据
+const selectedPlayerId = ref(null)
+const score = ref(0)
 const note = ref('')
+const showPlayerPicker = ref(false)
 
-// 初始化得分为0
-props.players.forEach(userId => {
-  scores.value[userId] = 0
+// 从localStorage读取上次选择的玩家
+const savedPlayerId = localStorage.getItem('currentPlayerId')
+if (savedPlayerId && props.players.includes(Number(savedPlayerId))) {
+  selectedPlayerId.value = Number(savedPlayerId)
+}
+
+// 玩家列表选项
+const playerColumns = computed(() => {
+  return props.players.map(userId => ({
+    text: props.playerNames[userId] || `玩家${userId}`,
+    value: userId
+  }))
 })
 
-// 玩家列表
-const playerList = computed(() => {
-  return props.players.map(userId => {
-    const user = props.users.find(u => u.id === userId)
-    return {
-      userId,
-      userName: user ? user.nickname : `玩家${userId}`
-    }
-  })
+// 选中的玩家名称
+const selectedPlayerName = computed(() => {
+  if (!selectedPlayerId.value) return ''
+  return props.playerNames[selectedPlayerId.value] || `玩家${selectedPlayerId.value}`
 })
 
-// 得分总和
-const scoreSum = computed(() => {
-  return Object.values(scores.value).reduce((sum, score) => sum + (Number(score) || 0), 0)
-})
-
-// 检查得分总和是否为0
-const isScoreSumValid = computed(() => {
-  return Math.abs(scoreSum.value) < 0.01 // 允许浮点误差
-})
+// 选择玩家
+function onPlayerConfirm({ selectedOptions }) {
+  selectedPlayerId.value = selectedOptions[0].value
+  localStorage.setItem('currentPlayerId', selectedPlayerId.value)
+  showPlayerPicker.value = false
+}
 
 // 提交表单
 function onSubmit() {
-  if (!isScoreSumValid.value) {
-    showToast('得分总和必须为0')
+  if (!selectedPlayerId.value) {
+    showToast('请选择您的昵称')
     return
   }
 
-  // 转换为数字
-  const finalScores = {}
-  for (const [userId, score] of Object.entries(scores.value)) {
-    finalScores[userId] = Number(score) || 0
+  if (score.value === undefined || score.value === null || score.value === '') {
+    showToast('请输入得分')
+    return
   }
 
   emit('submit', {
-    scores: finalScores,
+    playerId: selectedPlayerId.value,
+    playerName: selectedPlayerName.value,
+    score: Number(score.value) || 0,
     note: note.value,
     timestamp: new Date().toISOString()
   })
 
-  // 重置表单
-  props.players.forEach(userId => {
-    scores.value[userId] = 0
-  })
+  // 重置表单（保留玩家选择）
+  score.value = 0
   note.value = ''
 }
 </script>
@@ -164,62 +173,14 @@ function onSubmit() {
   color: #969799;
 }
 
-.player-scores {
-  margin-bottom: 16px;
-}
-
-.player-input {
-  margin-bottom: 16px;
-}
-
-.player-name {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #323233;
-}
-
-.player-name .van-icon {
-  margin-right: 6px;
-  color: #1989fa;
+.score-input-section {
+  margin: 16px 0;
 }
 
 .quick-buttons {
   display: flex;
   gap: 4px;
-}
-
-.score-sum {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  margin: 16px 0;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.score-sum.valid {
-  background: #f0f9ff;
-  color: #07c160;
-}
-
-.score-sum.invalid {
-  background: #fff1f0;
-  color: #ee0a24;
-}
-
-.score-sum .van-icon {
-  margin-right: 8px;
-  font-size: 20px;
-}
-
-.error-tip {
-  margin-left: 4px;
-  font-size: 12px;
+  flex-wrap: wrap;
 }
 
 .form-actions {

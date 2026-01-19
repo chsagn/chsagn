@@ -2,7 +2,7 @@
   <div class="game-detail" v-if="game">
     <!-- 导航栏 -->
     <van-nav-bar
-      :title="game.gameName || `${game.gameType}牌局`"
+      :title="game.gameName || '牌局'"
       left-arrow
       @click-left="$router.back()"
       fixed
@@ -21,7 +21,7 @@
             <van-icon name="share-o" style="margin-left: 4px;" />
           </template>
         </van-cell>
-        <van-cell title="游戏类型" :value="game.gameType" />
+        <van-cell title="创建者" :value="game.creator" />
         <van-cell title="开始时间" :value="formatDateTime(game.startTime)" />
         <van-cell title="参与人数" :value="`${game.players.length}人`" />
         <van-cell title="当前轮数" :value="`第${game.currentRound}局`" />
@@ -88,7 +88,7 @@
     >
       <RecordForm
         :players="game.players"
-        :users="users"
+        :player-names="game.playerNames"
         :round-number="game.currentRound + 1"
         @submit="onRecordSubmit"
         @cancel="showRecordForm = false"
@@ -104,7 +104,7 @@
       closeable
     >
       <div class="report-content" id="game-report">
-        <h2>{{ game.gameName || `${game.gameType}牌局` }}</h2>
+        <h2>{{ game.gameName || '牌局' }}</h2>
         <p class="report-time">
           {{ formatDateTime(game.startTime) }} -
           {{ game.endTime ? formatDateTime(game.endTime) : '进行中' }}
@@ -222,29 +222,34 @@ async function loadData() {
 // 提交记录
 async function onRecordSubmit(recordData) {
   try {
-    // 更新累计得分
-    for (const [userId, score] of Object.entries(recordData.scores)) {
-      game.value.scores[userId] = (game.value.scores[userId] || 0) + score
-    }
+    const { playerId, playerName, score, note, timestamp } = recordData
 
-    // 增加轮数
-    game.value.currentRound++
-    game.value.totalRounds++
+    // 更新该玩家的累计得分
+    game.value.scores[playerId] = (game.value.scores[playerId] || 0) + score
+
+    // 检查当前轮是否所有玩家都已提交
+    const currentRecords = await storage.getByIndex('records', 'gameRound', [gameId.value, game.value.currentRound + 1])
+    const submittedPlayers = currentRecords.map(r => r.playerId)
+
+    // 如果当前玩家还未提交本轮，则轮数+1（第一个提交的人开启新一轮）
+    if (submittedPlayers.length === 0) {
+      game.value.currentRound++
+      game.value.totalRounds++
+    }
 
     // 保存牌局
     await storage.update('games', game.value)
 
-    // 保存记录
+    // 保存该玩家的记录
     await storage.add('records', {
       gameId: gameId.value,
       roundNumber: game.value.currentRound,
-      timestamp: recordData.timestamp,
-      scores: recordData.scores,
-      note: recordData.note
+      playerId: playerId,
+      playerName: playerName,
+      score: score,
+      timestamp: timestamp,
+      note: note
     })
-
-    // 更新最后一轮得分
-    lastRoundScores.value = recordData.scores
 
     // 刷新历史记录
     if (historyRef.value) {

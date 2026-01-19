@@ -7,8 +7,8 @@
         <van-field
           v-model="roomCode"
           label="房间号"
-          placeholder="请输入6位房间号"
-          maxlength="6"
+          placeholder="请输入3位房间号"
+          maxlength="3"
           type="digit"
         />
         <van-field
@@ -35,7 +35,7 @@
       <van-cell-group inset title="当前牌局">
         <van-cell title="牌局名称" :value="currentGame.gameName" />
         <van-cell title="房间号" :value="currentGame.roomCode" />
-        <van-cell title="游戏类型" :value="currentGame.gameType" />
+        <van-cell title="创建者" :value="currentGame.creator" />
         <van-cell title="我的昵称" :value="currentPlayer" />
         <van-cell>
           <template #title>
@@ -46,8 +46,8 @@
           </template>
           <template #value>
             <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-              <van-tag v-for="(player, index) in getPlayerNames(currentGame.players)" :key="index">
-                {{ player }}
+              <van-tag v-for="(playerName, index) in Object.values(currentGame.playerNames || {})" :key="index">
+                {{ playerName }}
               </van-tag>
             </div>
           </template>
@@ -118,8 +118,8 @@ async function loadCurrentGame(code) {
 
 // 加入牌局
 async function joinGame() {
-  if (!roomCode.value || roomCode.value.length !== 6) {
-    showToast('请输入6位房间号')
+  if (!roomCode.value || roomCode.value.length !== 3) {
+    showToast('请输入3位房间号')
     return
   }
 
@@ -154,12 +154,18 @@ async function joinGame() {
   if (!game.players.includes(user.id)) {
     game.players.push(user.id)
     game.scores[user.id] = 0
+    // 初始化或更新playerNames
+    if (!game.playerNames) {
+      game.playerNames = {}
+    }
+    game.playerNames[user.id] = user.nickname
     await storage.update('games', game)
   }
 
   // 保存到本地
   localStorage.setItem('playerName', playerName.value.trim())
   localStorage.setItem('currentRoomCode', roomCode.value)
+  localStorage.setItem('currentPlayerId', user.id.toString())
   currentPlayer.value = playerName.value.trim()
 
   currentGame.value = game

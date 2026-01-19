@@ -29,13 +29,14 @@
       <van-card
         v-for="game in activeGames"
         :key="game.id"
-        :title="game.gameName || `${game.gameType}牌局`"
-        :desc="`开始时间: ${formatTime(game.startTime)}`"
+        :title="game.gameName || '牌局'"
+        :desc="`创建者: ${game.creator} | 开始时间: ${formatTime(game.startTime)}`"
         @click="toGameDetail(game.id)"
       >
         <template #tags>
-          <van-tag type="primary">{{ game.gameType }}</van-tag>
+          <van-tag type="primary">房间号: {{ game.roomCode }}</van-tag>
           <van-tag type="success" style="margin-left: 4px">第{{ game.currentRound }}局</van-tag>
+          <van-tag plain style="margin-left: 4px">{{ game.players.length }}人</van-tag>
         </template>
         <template #footer>
           <van-button size="small" type="primary" @click.stop="toGameDetail(game.id)">
@@ -55,13 +56,14 @@
       <van-card
         v-for="game in finishedGames.slice(0, 5)"
         :key="game.id"
-        :title="game.gameName || `${game.gameType}牌局`"
-        :desc="`${formatTime(game.startTime)} - ${formatTime(game.endTime)}`"
+        :title="game.gameName || '牌局'"
+        :desc="`创建者: ${game.creator} | ${formatTime(game.startTime)} - ${formatTime(game.endTime)}`"
         @click="toGameDetail(game.id)"
       >
         <template #tags>
           <van-tag plain>已结束</van-tag>
           <van-tag type="warning" style="margin-left: 4px">共{{ game.totalRounds }}局</van-tag>
+          <van-tag plain style="margin-left: 4px">{{ game.players.length }}人</van-tag>
         </template>
       </van-card>
     </div>
@@ -75,7 +77,7 @@
     </van-tabbar>
 
     <!-- 创建牌局弹窗 -->
-    <van-popup v-model:show="showCreateGame" position="bottom" round :style="{ height: '60%' }">
+    <van-popup v-model:show="showCreateGame" position="bottom" round :style="{ height: '40%' }">
       <div class="create-game-form">
         <h3>新建牌局</h3>
         <van-field
@@ -85,62 +87,13 @@
           clearable
         />
         <van-field
-          v-model="newGame.gameType"
-          label="游戏类型"
-          placeholder="请选择"
-          readonly
-          clickable
-          @click="showGameTypePicker = true"
+          v-model="newGame.creatorName"
+          label="您的昵称"
+          placeholder="请输入您的昵称"
+          clearable
         />
-        <van-field
-          label="参与玩家"
-          placeholder="请选择玩家"
-          readonly
-          clickable
-          @click="showPlayerPicker = true"
-        >
-          <template #input>
-            <van-tag v-for="id in newGame.players" :key="id" style="margin-right: 4px">
-              {{ getUserName(id) }}
-            </van-tag>
-          </template>
-        </van-field>
         <div style="margin-top: 16px; padding: 0 16px;">
           <van-button type="primary" block @click="createGame">创建牌局</van-button>
-        </div>
-      </div>
-    </van-popup>
-
-    <!-- 游戏类型选择器 -->
-    <van-popup v-model:show="showGameTypePicker" position="bottom" round>
-      <van-picker
-        :columns="gameTypes"
-        @confirm="onGameTypeConfirm"
-        @cancel="showGameTypePicker = false"
-      />
-    </van-popup>
-
-    <!-- 玩家选择器 -->
-    <van-popup v-model:show="showPlayerPicker" position="bottom" round :style="{ height: '70%' }">
-      <div style="padding: 16px;">
-        <h3 style="margin: 0 0 16px; text-align: center;">选择参与玩家</h3>
-        <van-checkbox-group v-model="newGame.players">
-          <van-space direction="vertical" fill>
-            <van-checkbox
-              v-for="user in users"
-              :key="user.id"
-              :name="user.id"
-              shape="square"
-              icon-size="20px"
-            >
-              {{ user.nickname }}
-            </van-checkbox>
-          </van-space>
-        </van-checkbox-group>
-        <div style="margin-top: 24px;">
-          <van-button type="primary" block @click="showPlayerPicker = false">
-            确定 (已选{{ newGame.players.length }}人)
-          </van-button>
         </div>
       </div>
     </van-popup>
@@ -163,36 +116,20 @@ const users = ref([])
 
 // 弹窗控制
 const showCreateGame = ref(false)
-const showGameTypePicker = ref(false)
-const showPlayerPicker = ref(false)
 
 // 新建牌局表单
 const newGame = ref({
   gameName: '',
-  gameType: '',
-  players: []
+  creatorName: ''
 })
-
-// 游戏类型选项
-const gameTypes = [
-  { text: '麻将', value: '麻将' },
-  { text: '扑克', value: '扑克' },
-  { text: '桥牌', value: '桥牌' },
-  { text: '斗地主', value: '斗地主' },
-  { text: '跑得快', value: '跑得快' },
-  { text: '炸金花', value: '炸金花' },
-  { text: '其他', value: '其他' }
-]
 
 // 加载数据
 onMounted(async () => {
   await loadGames()
-  await loadUsers()
-
-  // 如果没有用户，创建默认用户
-  if (users.value.length === 0) {
-    await createDefaultUsers()
-    await loadUsers()
+  // 从localStorage读取保存的昵称
+  const savedName = localStorage.getItem('playerName')
+  if (savedName) {
+    newGame.value.creatorName = savedName
   }
 })
 
@@ -210,75 +147,58 @@ async function loadUsers() {
   users.value = await storage.getAll('users')
 }
 
-// 创建默认用户
-async function createDefaultUsers() {
-  const defaultUsers = [
-    '张三', '李四', '王五', '赵六',
-    '钱七', '孙八', '周九', '吴十',
-    '郑十一', '冯十二'
-  ]
-  for (const nickname of defaultUsers) {
-    await storage.add('users', {
-      nickname,
-      avatar: 'default.png',
-      createdAt: new Date().toISOString()
-    })
-  }
-}
-
 // 格式化时间
 function formatTime(time) {
   return dayjs(time).format('MM-DD HH:mm')
 }
 
-// 获取用户名
-function getUserName(userId) {
-  const user = users.value.find(u => u.id === userId)
-  return user ? user.nickname : '未知'
-}
-
-// 游戏类型确认
-function onGameTypeConfirm({ selectedOptions }) {
-  newGame.value.gameType = selectedOptions[0].text || selectedOptions[0]
-  showGameTypePicker.value = false
-}
-
 // 创建牌局
 async function createGame() {
-  if (!newGame.value.gameType) {
-    return alert('请选择游戏类型')
-  }
-  if (newGame.value.players.length < 2) {
-    return alert('至少需要2个玩家')
+  if (!newGame.value.creatorName?.trim()) {
+    return alert('请输入您的昵称')
   }
 
-  // 生成6位房间号
-  const roomCode = Math.floor(100000 + Math.random() * 900000).toString()
+  // 保存昵称到localStorage
+  localStorage.setItem('playerName', newGame.value.creatorName.trim())
 
-  // 构建初始积分对象(确保是纯对象)
-  const initialScores = {}
-  for (const playerId of newGame.value.players) {
-    initialScores[String(playerId)] = 0
+  // 生成3位房间号
+  const roomCode = Math.floor(100 + Math.random() * 900).toString()
+
+  // 创建或获取创建者用户
+  let creator = users.value.find(u => u.nickname === newGame.value.creatorName.trim())
+  if (!creator) {
+    const creatorId = await storage.add('users', {
+      nickname: newGame.value.creatorName.trim(),
+      avatar: 'default.png',
+      createdAt: new Date().toISOString()
+    })
+    creator = { id: creatorId, nickname: newGame.value.creatorName.trim() }
   }
 
   // 创建游戏数据对象
   const gameData = {
-    gameName: newGame.value.gameName || `${newGame.value.gameType}牌局`,
-    gameType: newGame.value.gameType,
-    players: newGame.value.players,
+    gameName: newGame.value.gameName?.trim() || '新建牌局',
+    creator: creator.nickname,
+    creatorId: creator.id,
+    players: [creator.id], // 初始只有创建者
     roomCode: roomCode,
     startTime: new Date().toISOString(),
     endTime: null,
     status: 'playing',
     currentRound: 0,
     totalRounds: 0,
-    scores: initialScores
+    scores: {
+      [creator.id]: 0
+    },
+    playerNames: {
+      [creator.id]: creator.nickname
+    }
   }
 
   const gameId = await storage.add('games', gameData)
 
   showCreateGame.value = false
-  newGame.value = { gameName: '', gameType: '', players: [] }
+  newGame.value = { gameName: '', creatorName: localStorage.getItem('playerName') || '' }
   await loadGames()
 
   // 显示房间号
