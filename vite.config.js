@@ -4,7 +4,7 @@ import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [vue()],
-  base: '/bookking_kit/',
+  base: '/chsagn/',
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src')
