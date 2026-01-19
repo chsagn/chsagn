@@ -2,6 +2,11 @@
   <div class="join-game-page">
     <van-nav-bar title="加入牌局" left-arrow @click="$router.back()" fixed placeholder />
 
+    <!-- 使用说明 -->
+    <van-notice-bar left-icon="info-o" color="#1989fa" background="#ecf9ff">
+      请使用创建者分享的链接加入，或手动输入房间号
+    </van-notice-bar>
+
     <div class="join-container">
       <van-cell-group inset>
         <van-field
@@ -64,11 +69,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { showToast } from 'vant'
 import storage from '../utils/storage'
 
 const router = useRouter()
+const route = useRoute()
 const roomCode = ref('')
 const playerName = ref('')
 const currentGame = ref(null)
@@ -76,6 +82,13 @@ const currentPlayer = ref('')
 const users = ref([])
 
 onMounted(async () => {
+  await loadUsers()
+
+  // 从URL参数获取房间信息
+  const urlRoomCode = route.query.room
+  const urlGameName = route.query.game
+  const urlCreator = route.query.creator
+
   // 加载本地保存的玩家昵称和房间号
   const savedPlayerName = localStorage.getItem('playerName')
   const savedRoomCode = localStorage.getItem('currentRoomCode')
@@ -85,12 +98,21 @@ onMounted(async () => {
     currentPlayer.value = savedPlayerName
   }
 
-  if (savedRoomCode) {
+  // 优先使用URL参数中的房间号
+  if (urlRoomCode) {
+    roomCode.value = urlRoomCode
+
+    // 尝试从本地数据库加载
+    let game = await loadCurrentGame(urlRoomCode)
+
+    // 如果本地不存在，则自动创建（通过分享链接加入的情况）
+    if (!game && urlGameName && urlCreator) {
+      game = await createSharedGame(urlRoomCode, urlGameName, urlCreator)
+    }
+  } else if (savedRoomCode) {
     roomCode.value = savedRoomCode
     await loadCurrentGame(savedRoomCode)
   }
-
-  await loadUsers()
 })
 
 // 加载用户列表
@@ -113,7 +135,51 @@ async function loadCurrentGame(code) {
 
   if (game) {
     currentGame.value = game
+    return game
   }
+  return null
+}
+
+// 通过分享链接创建房间（其他设备）
+async function createSharedGame(roomCode, gameName, creatorName) {
+  // 创建或获取创建者用户
+  let creator = users.value.find(u => u.nickname === creatorName)
+  if (!creator) {
+    const creatorId = await storage.add('users', {
+      nickname: creatorName,
+      avatar: 'default.png',
+      createdAt: new Date().toISOString()
+    })
+    creator = { id: creatorId, nickname: creatorName }
+    await loadUsers()
+  }
+
+  // 创建游戏数据对象
+  const gameData = {
+    gameName: gameName,
+    creator: creator.nickname,
+    creatorId: creator.id,
+    players: [creator.id],
+    roomCode: roomCode,
+    startTime: new Date().toISOString(),
+    endTime: null,
+    status: 'playing',
+    currentRound: 0,
+    totalRounds: 0,
+    scores: {
+      [creator.id]: 0
+    },
+    playerNames: {
+      [creator.id]: creator.nickname
+    }
+  }
+
+  const gameId = await storage.add('games', gameData)
+  const game = await storage.getById('games', gameId)
+  currentGame.value = game
+
+  showToast(`已通过分享链接创建房间 ${roomCode}`)
+  return game
 }
 
 // 加入牌局
@@ -130,10 +196,11 @@ async function joinGame() {
 
   // 查找房间
   const games = await storage.getAll('games')
-  const game = games.find(g => g.roomCode === roomCode.value && g.status === 'playing')
+  let game = games.find(g => g.roomCode === roomCode.value && g.status === 'playing')
 
   if (!game) {
-    showToast('房间不存在或已结束')
+    // 如果没找到房间，提示用户需要通过分享链接加入
+    showToast('房间不存在，请使用创建者分享的链接加入')
     return
   }
 

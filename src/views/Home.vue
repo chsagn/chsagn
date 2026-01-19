@@ -201,8 +201,23 @@ async function createGame() {
   newGame.value = { gameName: '', creatorName: localStorage.getItem('playerName') || '' }
   await loadGames()
 
-  // 显示房间号
-  alert(`牌局创建成功!\n房间号: ${roomCode}\n分享给其他玩家让他们加入`)
+  // 生成分享链接
+  const shareUrl = `${window.location.origin}${window.location.pathname}#/join?room=${roomCode}&game=${encodeURIComponent(gameData.gameName)}&creator=${encodeURIComponent(creator.nickname)}`
+
+  // 显示房间号和分享链接
+  const message = `牌局创建成功!\n房间号: ${roomCode}\n\n分享链接给其他玩家：\n${shareUrl}`
+
+  // 尝试复制到剪贴板
+  if (navigator.clipboard) {
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      alert(`${message}\n\n✅ 链接已复制到剪贴板`)
+    } catch (e) {
+      alert(message)
+    }
+  } else {
+    alert(message)
+  }
 
   // 跳转到牌局详情
   router.push(`/game/${gameId}`)
