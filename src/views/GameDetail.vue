@@ -142,7 +142,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { showToast, showConfirmDialog } from 'vant'
+import { showToast, showConfirmDialog, showDialog } from 'vant'
+import QRCode from 'qrcode'
 import storage from '../utils/storage'
 import syncManager from '../utils/syncManager'
 import dayjs from 'dayjs'
@@ -353,14 +354,41 @@ async function captureReport() {
 }
 
 // 分享牌局
-function shareGame() {
-  if (navigator.share) {
-    navigator.share({
-      title: game.value.gameName || '打牌记账',
-      text: `${game.value.gameType}牌局，已进行${game.value.totalRounds}局`
+async function shareGame() {
+  const shareUrl = `${window.location.origin}${window.location.pathname}#/join?room=${game.value.roomCode}&game=${encodeURIComponent(game.value.gameName)}&creator=${encodeURIComponent(game.value.creator)}`
+
+  // 生成二维码
+  try {
+    const qrCodeDataURL = await QRCode.toDataURL(shareUrl, {
+      width: 300,
+      margin: 2
     })
-  } else {
-    showToast('浏览器不支持分享功能')
+
+    // 显示二维码弹窗
+    await showDialog({
+      title: '分享牌局',
+      message: `
+        <div style="text-align: center;">
+          <p style="font-size: 16px; margin: 10px 0;">房间号: <strong>${game.value.roomCode}</strong></p>
+          <p style="font-size: 14px; margin: 5px 0;">${game.value.gameName}</p>
+          <img src="${qrCodeDataURL}" style="width: 200px; height: 200px; margin: 10px auto;" />
+          <p style="font-size: 12px; color: #666; margin: 10px 0;">扫描二维码或分享链接加入</p>
+          <p style="font-size: 11px; color: #999; word-break: break-all; padding: 0 10px;">${shareUrl}</p>
+        </div>
+      `,
+      confirmButtonText: '复制链接',
+      showCancelButton: true,
+      cancelButtonText: '关闭',
+      allowHtml: true
+    })
+
+    // 复制链接到剪贴板
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(shareUrl)
+      showToast('链接已复制')
+    }
+  } catch (e) {
+    // 用户取消
   }
 }
 

@@ -109,7 +109,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { showToast } from 'vant'
+import { showToast, showDialog } from 'vant'
+import QRCode from 'qrcode'
 import storage from '../utils/storage'
 import dayjs from 'dayjs'
 
@@ -211,19 +212,37 @@ async function createGame() {
   // 生成分享链接
   const shareUrl = `${window.location.origin}${window.location.pathname}#/join?room=${roomCode}&game=${encodeURIComponent(gameData.gameName)}&creator=${encodeURIComponent(creator.nickname)}`
 
-  // 显示房间号和分享链接
-  const message = `牌局创建成功!\n房间号: ${roomCode}\n\n分享链接给其他玩家：\n${shareUrl}`
+  // 生成二维码
+  try {
+    const qrCodeDataURL = await QRCode.toDataURL(shareUrl, {
+      width: 300,
+      margin: 2
+    })
 
-  // 尝试复制到剪贴板
-  if (navigator.clipboard) {
-    try {
+    // 显示二维码弹窗
+    await showDialog({
+      title: '牌局创建成功',
+      message: `
+        <div style="text-align: center;">
+          <p style="font-size: 16px; margin: 10px 0;">房间号: <strong>${roomCode}</strong></p>
+          <img src="${qrCodeDataURL}" style="width: 200px; height: 200px; margin: 10px auto;" />
+          <p style="font-size: 12px; color: #666; margin: 10px 0;">扫描二维码或分享链接加入</p>
+          <p style="font-size: 11px; color: #999; word-break: break-all; padding: 0 10px;">${shareUrl}</p>
+        </div>
+      `,
+      confirmButtonText: '复制链接',
+      showCancelButton: true,
+      cancelButtonText: '进入牌局',
+      allowHtml: true
+    })
+
+    // 复制链接到剪贴板
+    if (navigator.clipboard) {
       await navigator.clipboard.writeText(shareUrl)
-      alert(`${message}\n\n✅ 链接已复制到剪贴板`)
-    } catch (e) {
-      alert(message)
+      showToast('链接已复制')
     }
-  } else {
-    alert(message)
+  } catch (e) {
+    // 用户取消或复制失败，直接进入牌局
   }
 
   // 跳转到牌局详情
