@@ -134,10 +134,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast, showConfirmDialog } from 'vant'
 import storage from '../utils/storage'
+import syncManager from '../utils/syncManager'
 import dayjs from 'dayjs'
 import ScoreBoard from '../components/ScoreBoard.vue'
 import RecordForm from '../components/RecordForm.vue'
@@ -155,6 +156,10 @@ const historyRef = ref(null)
 
 // 上一局的得分变化
 const lastRoundScores = ref({})
+
+// 自动刷新定时器
+let refreshTimer = null
+let unsubscribeSync = null
 
 // 最终排名
 const sortedFinalScores = computed(() => {
@@ -174,6 +179,29 @@ const sortedFinalScores = computed(() => {
 
 onMounted(async () => {
   await loadData()
+
+  // 监听跨标签页同步
+  unsubscribeSync = syncManager.on('update', 'games', async (data) => {
+    if (data.id === gameId.value) {
+      await loadData()
+      showToast('数据已更新')
+    }
+  })
+
+  // 每5秒自动刷新一次数据
+  refreshTimer = setInterval(async () => {
+    await loadData()
+  }, 5000)
+})
+
+onUnmounted(() => {
+  // 清理定时器和监听器
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+  }
+  if (unsubscribeSync) {
+    unsubscribeSync()
+  }
 })
 
 // 加载数据

@@ -239,7 +239,7 @@ function getUserName(userId) {
 
 // 游戏类型确认
 function onGameTypeConfirm({ selectedOptions }) {
-  newGame.value.gameType = selectedOptions[0]
+  newGame.value.gameType = selectedOptions[0].text || selectedOptions[0]
   showGameTypePicker.value = false
 }
 

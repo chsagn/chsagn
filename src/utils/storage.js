@@ -3,6 +3,8 @@
  * 使用IndexedDB存储数据，支持离线使用
  */
 
+import syncManager from './syncManager'
+
 const DB_NAME = 'BookkingDB'
 const DB_VERSION = 1
 
@@ -66,7 +68,12 @@ class Storage {
       const store = transaction.objectStore(storeName)
       const request = store.add(data)
 
-      request.onsuccess = () => resolve(request.result)
+      request.onsuccess = () => {
+        const id = request.result
+        // 通知其他标签页
+        syncManager.notify('add', storeName, { id, data })
+        resolve(id)
+      }
       request.onerror = () => reject(request.error)
     })
   }
@@ -79,7 +86,11 @@ class Storage {
       const store = transaction.objectStore(storeName)
       const request = store.put(data)
 
-      request.onsuccess = () => resolve(request.result)
+      request.onsuccess = () => {
+        // 通知其他标签页
+        syncManager.notify('update', storeName, { id: data.id, data })
+        resolve(request.result)
+      }
       request.onerror = () => reject(request.error)
     })
   }
@@ -92,7 +103,11 @@ class Storage {
       const store = transaction.objectStore(storeName)
       const request = store.delete(id)
 
-      request.onsuccess = () => resolve()
+      request.onsuccess = () => {
+        // 通知其他标签页
+        syncManager.notify('delete', storeName, { id })
+        resolve()
+      }
       request.onerror = () => reject(request.error)
     })
   }
