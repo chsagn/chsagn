@@ -255,7 +255,14 @@ async function createGame() {
   // 生成6位房间号
   const roomCode = Math.floor(100000 + Math.random() * 900000).toString()
 
-  const gameId = await storage.add('games', {
+  // 构建初始积分对象(确保是纯对象)
+  const initialScores = {}
+  for (const playerId of newGame.value.players) {
+    initialScores[String(playerId)] = 0
+  }
+
+  // 创建游戏数据对象
+  const gameData = {
     gameName: newGame.value.gameName || `${newGame.value.gameType}牌局`,
     gameType: newGame.value.gameType,
     players: newGame.value.players,
@@ -265,8 +272,10 @@ async function createGame() {
     status: 'playing',
     currentRound: 0,
     totalRounds: 0,
-    scores: Object.fromEntries(newGame.value.players.map(id => [id, 0]))
-  })
+    scores: initialScores
+  }
+
+  const gameId = await storage.add('games', gameData)
 
   showCreateGame.value = false
   newGame.value = { gameName: '', gameType: '', players: [] }

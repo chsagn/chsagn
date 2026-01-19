@@ -63,15 +63,18 @@ class Storage {
   // 通用添加方法
   async add(storeName, data) {
     const db = await this.ensureDB()
+    // 将数据转换为纯对象,去除Vue响应式代理
+    const plainData = JSON.parse(JSON.stringify(data))
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([storeName], 'readwrite')
       const store = transaction.objectStore(storeName)
-      const request = store.add(data)
+      const request = store.add(plainData)
 
       request.onsuccess = () => {
         const id = request.result
         // 通知其他标签页
-        syncManager.notify('add', storeName, { id, data })
+        syncManager.notify('add', storeName, { id, data: plainData })
         resolve(id)
       }
       request.onerror = () => reject(request.error)
@@ -81,14 +84,17 @@ class Storage {
   // 通用更新方法
   async update(storeName, data) {
     const db = await this.ensureDB()
+    // 将数据转换为纯对象,去除Vue响应式代理
+    const plainData = JSON.parse(JSON.stringify(data))
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([storeName], 'readwrite')
       const store = transaction.objectStore(storeName)
-      const request = store.put(data)
+      const request = store.put(plainData)
 
       request.onsuccess = () => {
         // 通知其他标签页
-        syncManager.notify('update', storeName, { id: data.id, data })
+        syncManager.notify('update', storeName, { id: plainData.id, data: plainData })
         resolve(request.result)
       }
       request.onerror = () => reject(request.error)
