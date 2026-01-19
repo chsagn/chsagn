@@ -9,9 +9,18 @@
 
     <!-- 快速操作 -->
     <div class="quick-actions">
-      <van-button type="primary" block icon="plus" @click="showCreateGame = true">
-        新建牌局
-      </van-button>
+      <van-row gutter="12">
+        <van-col span="12">
+          <van-button type="primary" block icon="plus" @click="showCreateGame = true">
+            新建牌局
+          </van-button>
+        </van-col>
+        <van-col span="12">
+          <van-button block icon="friends-o" @click="toJoinGame">
+            加入牌局
+          </van-button>
+        </van-col>
+      </van-row>
     </div>
 
     <!-- 进行中的牌局 -->
@@ -112,25 +121,27 @@
     </van-popup>
 
     <!-- 玩家选择器 -->
-    <van-popup v-model:show="showPlayerPicker" position="bottom" round>
-      <van-checkbox-group v-model="newGame.players">
-        <van-cell-group>
-          <van-cell
-            v-for="user in users"
-            :key="user.id"
-            clickable
-            @click="togglePlayer(user.id)"
-          >
-            <template #title>
-              <van-checkbox :name="user.id" ref="checkboxes">
-                {{ user.nickname }}
-              </van-checkbox>
-            </template>
-          </van-cell>
-        </van-cell-group>
-      </van-checkbox-group>
+    <van-popup v-model:show="showPlayerPicker" position="bottom" round :style="{ height: '70%' }">
       <div style="padding: 16px;">
-        <van-button type="primary" block @click="showPlayerPicker = false">确定</van-button>
+        <h3 style="margin: 0 0 16px; text-align: center;">选择参与玩家</h3>
+        <van-checkbox-group v-model="newGame.players">
+          <van-space direction="vertical" fill>
+            <van-checkbox
+              v-for="user in users"
+              :key="user.id"
+              :name="user.id"
+              shape="square"
+              icon-size="20px"
+            >
+              {{ user.nickname }}
+            </van-checkbox>
+          </van-space>
+        </van-checkbox-group>
+        <div style="margin-top: 24px;">
+          <van-button type="primary" block @click="showPlayerPicker = false">
+            确定 (已选{{ newGame.players.length }}人)
+          </van-button>
+        </div>
       </div>
     </van-popup>
   </div>
@@ -232,16 +243,6 @@ function onGameTypeConfirm({ selectedOptions }) {
   showGameTypePicker.value = false
 }
 
-// 切换玩家选择
-function togglePlayer(userId) {
-  const index = newGame.value.players.indexOf(userId)
-  if (index > -1) {
-    newGame.value.players.splice(index, 1)
-  } else {
-    newGame.value.players.push(userId)
-  }
-}
-
 // 创建牌局
 async function createGame() {
   if (!newGame.value.gameType) {
@@ -251,10 +252,14 @@ async function createGame() {
     return alert('至少需要2个玩家')
   }
 
+  // 生成6位房间号
+  const roomCode = Math.floor(100000 + Math.random() * 900000).toString()
+
   const gameId = await storage.add('games', {
     gameName: newGame.value.gameName || `${newGame.value.gameType}牌局`,
     gameType: newGame.value.gameType,
     players: newGame.value.players,
+    roomCode: roomCode,
     startTime: new Date().toISOString(),
     endTime: null,
     status: 'playing',
@@ -266,6 +271,9 @@ async function createGame() {
   showCreateGame.value = false
   newGame.value = { gameName: '', gameType: '', players: [] }
   await loadGames()
+
+  // 显示房间号
+  alert(`牌局创建成功!\n房间号: ${roomCode}\n分享给其他玩家让他们加入`)
 
   // 跳转到牌局详情
   router.push(`/game/${gameId}`)
@@ -283,6 +291,11 @@ async function endGame(gameId) {
 // 跳转到牌局详情
 function toGameDetail(gameId) {
   router.push(`/game/${gameId}`)
+}
+
+// 跳转到加入牌局
+function toJoinGame() {
+  router.push('/join')
 }
 
 // 跳转到设置

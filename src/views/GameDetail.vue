@@ -16,6 +16,11 @@
     <!-- 牌局信息 -->
     <div class="game-info">
       <van-cell-group inset>
+        <van-cell title="房间号" :value="game.roomCode" is-link @click="copyRoomCode">
+          <template #right-icon>
+            <van-icon name="share-o" style="margin-left: 4px;" />
+          </template>
+        </van-cell>
         <van-cell title="游戏类型" :value="game.gameType" />
         <van-cell title="开始时间" :value="formatDateTime(game.startTime)" />
         <van-cell title="参与人数" :value="`${game.players.length}人`" />
@@ -250,6 +255,27 @@ async function endGameConfirm() {
 // 查看完整报表
 function viewFullReport() {
   showReport.value = true
+}
+
+// 复制房间号
+async function copyRoomCode() {
+  try {
+    await navigator.clipboard.writeText(game.value.roomCode)
+    showToast('房间号已复制')
+  } catch (error) {
+    // 不支持clipboard API,使用fallback方法
+    const textArea = document.createElement('textarea')
+    textArea.value = game.value.roomCode
+    document.body.appendChild(textArea)
+    textArea.select()
+    try {
+      document.execCommand('copy')
+      showToast('房间号已复制')
+    } catch (err) {
+      showToast('复制失败,请手动复制: ' + game.value.roomCode)
+    }
+    document.body.removeChild(textArea)
+  }
 }
 
 // 截图保存
