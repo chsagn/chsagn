@@ -227,12 +227,13 @@ async function onRecordSubmit(recordData) {
     // 更新该玩家的累计得分
     game.value.scores[playerId] = (game.value.scores[playerId] || 0) + score
 
-    // 检查当前轮是否所有玩家都已提交
-    const currentRecords = await storage.getByIndex('records', 'gameRound', [gameId.value, game.value.currentRound + 1])
-    const submittedPlayers = currentRecords.map(r => r.playerId)
+    // 检查当前轮是否已有记录（查询该游戏的所有记录，然后过滤当前轮）
+    const allRecords = await storage.getByIndex('records', 'gameId', gameId.value)
+    const nextRound = game.value.currentRound + 1
+    const currentRoundRecords = allRecords.filter(r => r.roundNumber === nextRound)
 
-    // 如果当前玩家还未提交本轮，则轮数+1（第一个提交的人开启新一轮）
-    if (submittedPlayers.length === 0) {
+    // 如果当前轮还没有任何记录，则轮数+1（第一个提交的人开启新一轮）
+    if (currentRoundRecords.length === 0) {
       game.value.currentRound++
       game.value.totalRounds++
     }

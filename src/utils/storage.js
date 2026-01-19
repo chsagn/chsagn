@@ -6,7 +6,7 @@
 import syncManager from './syncManager'
 
 const DB_NAME = 'BookkingDB'
-const DB_VERSION = 2  // 升级版本号以支持新的数据结构
+const DB_VERSION = 3  // 再次升级版本号，修复索引问题
 
 class Storage {
   constructor() {
@@ -47,7 +47,6 @@ class Storage {
           recordStore.createIndex('gameId', 'gameId', { unique: false })
           recordStore.createIndex('roundNumber', 'roundNumber', { unique: false })
           recordStore.createIndex('playerId', 'playerId', { unique: false })
-          recordStore.createIndex('gameRound', ['gameId', 'roundNumber'], { unique: false })
           recordStore.createIndex('timestamp', 'timestamp', { unique: false })
         }
       }
