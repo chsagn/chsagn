@@ -1,0 +1,2848 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小天才工具包</title>
+    <!-- 浏览器标签页图标 -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico?v=1">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico?v=1">
+    <link rel="apple-touch-icon" href="cat.png">
+    <!-- 条形码和二维码库 -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .main-wrapper {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .sidebar {
+            width: 200px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            height: fit-content;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .menu-item {
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .menu-item:hover {
+            background: #f0f4ff;
+            color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .menu-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 18px;
+            background: #667eea;
+            border-radius: 2px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #outputText {
+            display: none;
+        }
+
+        .output-display {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            background: #f9f9f9;
+            overflow-x: auto;
+            white-space: pre;
+            word-wrap: normal;
+        }
+
+        .highlight-timestamp {
+            background: linear-gradient(90deg, #ffd54f 0%, #ffb300 100%);
+            color: #d84315;
+            font-weight: bold;
+            padding: 2px 4px;
+            border-radius: 3px;
+            box-shadow: 0 1px 3px rgba(255, 179, 0, 0.3);
+        }
+
+        .converter-section {
+            background: #f0f4ff;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .converter-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .converter-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .converter-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .converter-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .converter-box input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-family: 'Consolas', monospace;
+            transition: border-color 0.3s;
+        }
+
+        .converter-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-convert {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .btn-convert:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .converter-result {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            color: #555;
+            min-height: 60px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            border: 1px solid #e0e0e0;
+        }
+
+        .converter-result.show {
+            display: flex;
+        }
+
+        .converter-result.success {
+            background: #e8f5e9;
+            border-color: #4caf50;
+            color: #2e7d32;
+        }
+
+        @media (max-width: 768px) {
+            .converter-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .converter-status {
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .converter-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .converter-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .converter-status.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .json-tools {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-tool {
+            padding: 4px 8px;
+            background: #f5f7fa;
+            color: #667eea;
+            border: 1px solid #667eea;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            min-width: auto;
+        }
+
+        .btn-tool:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            font-size: 15px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-update {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-update:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-copy {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-copy:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-clear {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(244, 67, 54, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .info-box {
+            background: #f5f7fa;
+            border-left: 4px solid #667eea;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-box p {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .info-box strong {
+            color: #667eea;
+        }
+
+        .status {
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .timestamp-info {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 10px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .timestamp-info > div:not(.interval-config) {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timestamp-info label {
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .timestamp-info span {
+            color: #333;
+            font-weight: bold;
+            font-family: 'Consolas', monospace;
+        }
+
+        .current-timestamp-box {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .timestamp-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-copy-timestamp {
+            padding: 2px 6px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-copy-timestamp:hover {
+            background: #45a049;
+            transform: scale(1.05);
+            box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-copy-timestamp:active {
+            transform: scale(0.98);
+        }
+
+        .interval-config {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+            width: 200px;
+        }
+
+        .interval-config label {
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 0;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .interval-config input {
+            width: 100px;
+            padding: 6px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Consolas', monospace;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+
+        .interval-config input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .start-time-config {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: fit-content;
+        }
+
+        .start-time-label-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: fit-content;
+        }
+
+        .start-time-config > .start-time-label-row > label {
+            color: #555;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .start-time-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: fit-content;
+        }
+
+        .start-time-config input[type="datetime-local"] {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Consolas', monospace;
+            transition: border-color 0.3s;
+            width: 225px;
+            text-align: left;
+        }
+
+        .start-time-config input[type="datetime-local"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .use-current-time {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            background: #f5f7fa;
+            border-radius: 4px;
+            border: 1px solid #d0d0d0;
+        }
+
+        .use-current-time input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .use-current-time label {
+            margin: 0;
+            cursor: pointer;
+            font-size: 12px;
+            color: #555;
+            font-weight: 500;
+            white-space: nowrap;
+            line-height: 20px;
+        }
+
+        .btn-copy-converter {
+            width: auto;
+            padding: 6px 12px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-copy-converter:hover {
+            background: #45a049;
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-copy-converter:active {
+            transform: scale(0.98);
+        }
+
+        .timestamp-section {
+            background: #e8f5e9;
+            border: 2px dashed #4caf50;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .timestamp-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .timestamp-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #4caf50;
+            text-align: center;
+        }
+
+        .btn-help {
+            position: absolute;
+            right: 0;
+            padding: 6px 12px;
+            background: white;
+            color: #4caf50;
+            border: 2px solid #4caf50;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .btn-help:hover {
+            background: #4caf50;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .help-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            margin-bottom: 0;
+        }
+
+        .help-content.show {
+            max-height: 500px;
+            margin-bottom: 20px;
+        }
+
+        .info-box {
+            background: #f5f7fa;
+            border-left: 4px solid #4caf50;
+            padding: 15px 20px;
+            border-radius: 8px;
+        }
+
+        .barcode-section {
+            background: #fff8e1;
+            border: 2px dashed #ffa726;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .barcode-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffa726;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .barcode-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .barcode-left {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .barcode-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .barcode-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Consolas', monospace;
+        }
+
+        .barcode-input:focus {
+            outline: none;
+            border-color: #ffa726;
+        }
+
+        .code-type-switch {
+            display: flex;
+            background: #f5f5f5;
+            border-radius: 6px;
+            padding: 3px;
+        }
+
+        .code-type-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .code-type-btn.active {
+            background: white;
+            color: #ffa726;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-generate {
+            width: 100%;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 167, 38, 0.3);
+        }
+
+        .code-display {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e0e0e0;
+        }
+
+        .code-display canvas,
+        .code-display svg,
+        .code-display #qrcodeContainer {
+            margin: 20px auto;
+        }
+
+        .code-info {
+            margin-top: 15px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .btn-download {
+            margin-top: 15px;
+            padding: 8px 16px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: none;
+        }
+
+        .btn-download:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .unicode-section {
+            background: #fce4ec;
+            border: 2px dashed #e91e63;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .unicode-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #e91e63;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .unicode-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .unicode-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .unicode-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .unicode-textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Consolas', monospace;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        .unicode-textarea:focus {
+            outline: none;
+            border-color: #e91e63;
+        }
+
+        .unicode-textarea[readonly] {
+            display: none;
+        }
+
+        .unicode-textarea[readonly].show {
+            display: block;
+        }
+
+        .btn-unicode-convert {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-unicode-convert:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .unicode-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .random-text-section {
+            background: #fff3e0;
+            border: 2px dashed #ff9800;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .random-text-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ff9800;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .random-text-controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .control-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-item label {
+            font-size: 13px;
+            color: #555;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .control-item input[type="number"],
+        .control-item select {
+            width: 120px;
+            padding: 6px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: border-color 0.3s;
+        }
+
+        .control-item input[type="number"]:focus,
+        .control-item select:focus {
+            outline: none;
+            border-color: #ff9800;
+        }
+
+        .char-types {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .char-type-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .char-type-checkbox:hover {
+            background: #ffecb3;
+        }
+
+        .char-type-checkbox input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .char-type-checkbox label {
+            cursor: pointer;
+            font-size: 12px;
+            color: #555;
+            margin: 0;
+        }
+
+        .btn-generate-text {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(255, 152, 0, 0.2);
+            white-space: nowrap;
+            max-width: 200px;
+        }
+
+        .btn-generate-text:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+        }
+
+        .random-text-output {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: none;
+        }
+
+        .random-text-output.show {
+            display: block;
+        }
+
+        .random-text-result {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Consolas', monospace;
+            resize: vertical;
+            background: #f9f9f9;
+            color: #333;
+            line-height: 1.6;
+            word-break: break-all;
+        }
+
+        .random-text-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff3e0;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #f57c00;
+            display: none;
+        }
+
+        .random-text-info.show {
+            display: block;
+        }
+
+        .barcode-status,
+        .unicode-status,
+        .random-text-status {
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .barcode-status.success,
+        .unicode-status.success,
+        .random-text-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .barcode-status.error,
+        .unicode-status.error,
+        .random-text-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .barcode-status.show,
+        .unicode-status.show,
+        .random-text-status.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .battery-section {
+            background: #e3f2fd;
+            border: 2px dashed #2196f3;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .battery-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2196f3;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .battery-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .mqtt-input-section,
+        .mqtt-output-section {
+            margin-bottom: 15px;
+        }
+
+        .mqtt-textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        .mqtt-textarea:focus {
+            outline: none;
+            border-color: #2196f3;
+        }
+
+        .mqtt-textarea[readonly] {
+            background: #f9f9f9;
+        }
+
+        .battery-label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .battery-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn-battery-update,
+        .btn-battery-copy,
+        .btn-battery-clear {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-battery-update {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+        }
+
+        .btn-battery-update:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+
+        .btn-battery-copy {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .btn-battery-copy:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-battery-clear {
+            background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+            color: white;
+        }
+
+        .btn-battery-clear:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+        }
+
+        .battery-status {
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .battery-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .battery-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .battery-status.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+    <!-- 左侧菜单 -->
+    <div class="sidebar">
+        <div class="sidebar-title">🛠️ 工具导航</div>
+        <div class="menu-item active" onclick="scrollToSection('timestamp-section')">
+            <span>⏱️</span>
+            <span>时间戳更新</span>
+        </div>
+        <div class="menu-item" onclick="scrollToSection('converter-section')">
+            <span>🔄</span>
+            <span>时间转换</span>
+        </div>
+        <div class="menu-item" onclick="scrollToSection('barcode-section')">
+            <span>📊</span>
+            <span>条码生成</span>
+        </div>
+        <div class="menu-item" onclick="scrollToSection('random-text-section')">
+            <span>🎲</span>
+            <span>随机文字生成</span>
+        </div>
+        <div class="menu-item" onclick="scrollToSection('unicode-section')">
+            <span>🔤</span>
+            <span>Unicode转换</span>
+        </div>
+        <div class="menu-item" onclick="scrollToSection('battery-section')">
+            <span>📡</span>
+            <span>MQTT报文管理</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1><img src="cat.png" alt="猫咪图标" style="width: 32px; height: 32px; vertical-align: middle; margin-right: 8px; background: transparent; mix-blend-mode: multiply;"> 小天才工具包</h1>
+            <p>JSON时间戳更新、时间转换、条形码/二维码生成、Unicode转换、随机文字生成</p>
+        </div>
+
+        <div class="content">
+            <!-- 定位报文时间戳更新工具 -->
+            <div class="timestamp-section" id="timestamp-section">
+                <div class="timestamp-header">
+                    <div class="timestamp-title">⏱️ MQTT报文时间戳更新工具</div>
+                    <button class="btn-help" onclick="toggleHelp()">
+                        <span id="helpIcon">📖</span>
+                        <span id="helpText">使用说明</span>
+                    </button>
+                </div>
+
+                <div class="help-content" id="helpContent">
+                    <div class="info-box">
+                        <p><strong>使用说明：</strong></p>
+                        <p>1️⃣ 将MQTT报文JSON粘贴到输入框</p>
+                        <p>2️⃣ 可选：设置"报文首个timestamp"（默认使用当前时间，取消勾选可自定义）</p>
+                        <p>3️⃣ 可选：调整"递增间隔"（默认10秒）</p>
+                        <p>4️⃣ 点击"更新时间戳"按钮</p>
+                        <p>5️⃣ 第一个timestamp使用起始时间，后续每个递增设定的间隔秒数</p>
+                        <p>6️⃣ 点击"复制结果"可直接复制到剪贴板</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">输入原始报文</div>
+                    <div class="json-tools">
+                        <button class="btn-tool" onclick="restoreOriginal()">🔄 原始格式</button>
+                        <button class="btn-tool" onclick="formatJSON()">📐 JSON格式化</button>
+                        <button class="btn-tool" onclick="compressJSON()">🗜️ 压缩</button>
+                    </div>
+                    <textarea id="inputText" placeholder='粘贴JSON报文，例如：{"locations":[{"timestamp":1751598600,...}]}'></textarea>
+                    <div class="timestamp-info">
+                        <div class="start-time-config">
+                            <div class="start-time-label-row">
+                                <label>报文首个timestamp</label>
+                                <input type="datetime-local" id="startTimeInput" step="1" />
+                                <div class="use-current-time">
+                                    <input type="checkbox" id="useCurrentTime" checked />
+                                    <label for="useCurrentTime">使用当前时间</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="interval-config">
+                            <label>递增间隔(秒)</label>
+                            <input type="number" id="intervalInput" value="10" min="1" max="3600" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-update" onclick="updateTimestamps()">🔄 更新时间戳</button>
+                    <button class="btn-copy" onclick="copyResult()">📋 复制结果</button>
+                    <button class="btn-clear" onclick="clearAll()">🗑️ 清空</button>
+                </div>
+
+                <div id="status" class="status"></div>
+
+                <div class="section output-section" style="display: none;">
+                    <div class="section-title">输出结果</div>
+                    <div id="outputDisplay" class="output-display">更新后的JSON将显示在这里...</div>
+                    <textarea id="outputText" readonly placeholder="更新后的JSON将显示在这里..."></textarea>
+                </div>
+            </div>
+
+            <!-- 时间转换工具 -->
+            <div class="converter-section" id="converter-section">
+                <div class="converter-title">🔄 时间转换工具</div>
+
+                <!-- 当前时间戳显示 + 精度配置 -->
+                <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 20px; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                    <div style="display: flex; gap: 30px; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <label style="color: #888; font-size: 12px;">当前时间戳</label>
+                            <span id="currentTimestamp" style="color: #333; font-weight: bold; font-family: 'Consolas', monospace;">-</span>
+                            <button class="btn-copy-timestamp" onclick="copyCurrentTimestamp()">📋</button>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <label style="color: #888; font-size: 12px;">可读时间</label>
+                            <span id="currentTime" style="color: #333; font-weight: bold; font-family: 'Consolas', monospace; min-width: 200px;">-</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                        <label style="color: #555; font-size: 11px; font-weight: 600; white-space: nowrap;">精度：</label>
+                        <div class="code-type-switch" style="margin: 0; padding: 2px; white-space: nowrap;">
+                            <button class="code-type-btn active" id="precisionSecondBtn" onclick="switchPrecision('second')" style="padding: 4px 12px; font-size: 11px;">秒</button>
+                            <button class="code-type-btn" id="precisionMillisecondBtn" onclick="switchPrecision('millisecond')" style="padding: 4px 12px; font-size: 11px;">毫秒</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="converter-grid">
+                    <!-- 时间戳转日期 -->
+                    <div class="converter-box">
+                        <div class="converter-label">时间戳 → 日期时间</div>
+                        <input type="text" id="timestampInput" placeholder="输入时间戳，例如：1736232000" />
+                        <button class="btn-convert" onclick="convertTimestampToDate()">转换为日期</button>
+                        <div class="converter-result" id="timestampResult">等待转换...</div>
+                    </div>
+
+                    <!-- 日期转时间戳 -->
+                    <div class="converter-box">
+                        <div class="converter-label">日期时间 → 时间戳</div>
+                        <input type="datetime-local" id="dateInput" step="1" />
+                        <button class="btn-convert" onclick="convertDateToTimestamp()">转换为时间戳</button>
+                        <div class="converter-result" id="dateResult">等待转换...</div>
+                        <div style="text-align: center;">
+                            <button class="btn-copy-converter" id="copyDateResult" onclick="copyConverterResult('dateResult')" style="display: none;">
+                                <span>📋</span>
+                                <span>复制时间戳</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="converterStatus" class="converter-status"></div>
+            </div>
+
+            <!-- 条形码/二维码生成工具 -->
+            <div class="barcode-section" id="barcode-section">
+                <div class="barcode-title">📊 条形码/二维码生成工具</div>
+                <div class="barcode-content">
+                    <div class="barcode-left">
+                        <div class="barcode-controls">
+                            <input type="text" id="codeInput" class="barcode-input" placeholder="输入数字或文本，例如：1234567890" />
+                            <div class="code-type-switch">
+                                <button class="code-type-btn active" id="barcodeBtn" onclick="switchCodeType('barcode')">条形码</button>
+                                <button class="code-type-btn" id="qrcodeBtn" onclick="switchCodeType('qrcode')">二维码</button>
+                            </div>
+                            <button class="btn-generate" onclick="generateCode()">生成</button>
+                        </div>
+                    </div>
+                    <div class="barcode-right">
+                        <div class="code-display" id="codeDisplay">
+                            <p style="color: #999;">输入内容后点击"生成"按钮</p>
+                        </div>
+                        <button class="btn-download" id="downloadBtn" onclick="downloadCode()">💾 下载图片</button>
+                    </div>
+                </div>
+                <div id="barcodeStatus" class="barcode-status"></div>
+            </div>
+
+            <!-- 随机文字生成器 -->
+            <div class="random-text-section" id="random-text-section">
+                <div class="random-text-title">🎲 随机文字生成器</div>
+
+                <div class="random-text-controls">
+                    <div class="control-row">
+                        <div class="control-item">
+                            <label>生成长度：</label>
+                            <input type="number" id="textLength" value="100" min="1" max="10000" />
+                        </div>
+                        <div class="control-item">
+                            <label>格式：</label>
+                            <select id="outputFormat">
+                                <option value="continuous">连续</option>
+                                <option value="space">空格分隔</option>
+                                <option value="comma">逗号分隔</option>
+                                <option value="newline">换行分隔</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label style="font-size: 13px; color: #555; font-weight: 600;">字符类型：</label>
+                        <div class="char-types">
+                            <div class="char-type-checkbox">
+                                <input type="checkbox" id="includeNumbers" checked />
+                                <label for="includeNumbers">数字 (0-9)</label>
+                            </div>
+                            <div class="char-type-checkbox">
+                                <input type="checkbox" id="includeLowercase" checked />
+                                <label for="includeLowercase">小写字母 (a-z)</label>
+                            </div>
+                            <div class="char-type-checkbox">
+                                <input type="checkbox" id="includeUppercase" checked />
+                                <label for="includeUppercase">大写字母 (A-Z)</label>
+                            </div>
+                            <div class="char-type-checkbox">
+                                <input type="checkbox" id="includeSpecial" />
+                                <label for="includeSpecial">特殊符号 (!@#$...)</label>
+                            </div>
+                            <div class="char-type-checkbox">
+                                <input type="checkbox" id="includeChinese" />
+                                <label for="includeChinese">常用汉字</label>
+                            </div>
+                        </div>
+                        <button class="btn-generate-text" onclick="generateRandomText()">🎲 生成随机文字</button>
+                    </div>
+                </div>
+
+                <div class="random-text-output" id="randomTextOutput">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <label style="font-size: 13px; font-weight: 600; color: #333;">生成结果</label>
+                        <button onclick="copyRandomText()" style="padding: 5px 10px; background: #4caf50; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2); white-space: nowrap; max-width: 200px;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px rgba(76, 175, 80, 0.3)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 4px rgba(76, 175, 80, 0.2)'">
+                            📋 复制结果
+                        </button>
+                    </div>
+                    <textarea id="randomTextResult" class="random-text-result" readonly placeholder="点击生成按钮开始..."></textarea>
+                    <div id="randomTextInfo" class="random-text-info"></div>
+                </div>
+                <div id="randomTextStatus" class="random-text-status"></div>
+            </div>
+
+            <!-- Unicode-中文转换工具 -->
+            <div class="unicode-section" id="unicode-section">
+                <div class="unicode-title">🔤 Unicode-中文转换工具</div>
+                <div class="unicode-grid">
+                    <!-- 中文转Unicode -->
+                    <div class="unicode-box">
+                        <div class="unicode-label">中文 → Unicode</div>
+                        <textarea id="chineseInput" class="unicode-textarea" placeholder="输入中文文本，例如：你好世界"></textarea>
+                        <button class="btn-unicode-convert" onclick="convertChineseToUnicode()">转换为Unicode</button>
+                        <textarea id="unicodeOutput" class="unicode-textarea" placeholder="Unicode编码结果" readonly></textarea>
+                    </div>
+
+                    <!-- Unicode转中文 -->
+                    <div class="unicode-box">
+                        <div class="unicode-label">Unicode → 中文</div>
+                        <textarea id="unicodeInput" class="unicode-textarea" placeholder="输入Unicode编码，例如：\u4f60\u597d\u4e16\u754c"></textarea>
+                        <button class="btn-unicode-convert" onclick="convertUnicodeToChinese()">转换为中文</button>
+                        <textarea id="chineseOutput" class="unicode-textarea" placeholder="中文结果" readonly></textarea>
+                    </div>
+                </div>
+                <div id="unicodeStatus" class="unicode-status"></div>
+            </div>
+
+            <!-- MQTT报文管理工具 -->
+            <div class="battery-section" id="battery-section">
+                <div class="battery-title">📡 MQTT报文管理工具</div>
+                <div class="battery-content">
+                    <!-- 预设报文列表 -->
+                    <div class="mqtt-preset-section" style="margin-bottom: 20px;">
+                        <label class="battery-label">📋 快捷报文管理：</label>
+                        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                            <!-- 设备电量报文 -->
+                            <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #42a5f5;">
+                                <div style="flex: 1;">
+                                    <div style="font-size: 15px; font-weight: 600; color: #333; margin-bottom: 5px;">
+                                        🔋 设备电量报文
+                                    </div>
+                                    <div style="font-size: 12px; color: #666;">
+                                        Topic: stag/card/${sn}/status/pub
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="copyPresetMessage('battery')" style="padding: 8px 16px; background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.3)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(76, 175, 80, 0.2)'">
+                                        📋 满电报文复制
+                                    </button>
+                                    <button onclick="copyPresetMessage('lowBattery')" style="padding: 8px 16px; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%); color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(255, 107, 107, 0.3)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(255, 107, 107, 0.2)'">
+                                        ⚠️ 低电报文复制
+                                    </button>
+                                    <button onclick="viewPresetMessage('battery')" style="padding: 8px 16px; background: linear-gradient(135deg, #42a5f5 0%, #1976d2 100%); color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(33, 150, 243, 0.3)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(33, 150, 243, 0.2)'">
+                                        👁️ 查看详情
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 报文详情展示区（默认隐藏）-->
+                    <div id="mqttDetailSection" class="mqtt-detail-section" style="display: none; margin-bottom: 20px;">
+                        <label class="battery-label">报文详情（可编辑）：</label>
+                        <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                            <!-- Topic显示和复制 -->
+                            <div style="margin-bottom: 15px; padding: 12px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e0e0e0;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                    <div style="flex: 1;">
+                                        <label style="font-size: 12px; color: #666; margin-bottom: 5px; display: block;">Topic（可编辑）:</label>
+                                        <input type="text" id="mqttTopicDisplay" value="stag/card/${sn}/status/pub" style="font-family: 'Consolas', monospace; font-size: 13px; color: #333; background: white; padding: 6px 10px; border-radius: 4px; display: block; border: 1px solid #ddd; width: 100%; transition: border-color 0.3s;" onfocus="this.style.borderColor='#9c27b0'" onblur="this.style.borderColor='#ddd'" />
+                                    </div>
+                                    <button onclick="copyTopicOnly()" style="padding: 6px 12px; background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; white-space: nowrap; height: fit-content;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px rgba(156, 39, 176, 0.3)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">
+                                        📋 复制Topic
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- JSON内容 -->
+                            <label style="font-size: 12px; color: #666; margin-bottom: 8px; display: block;">JSON内容:</label>
+                            <textarea id="mqttDetail" class="mqtt-textarea" style="background: white; min-height: 250px;"></textarea>
+
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <button onclick="copyDetailMessage()" style="flex: 1; padding: 8px 16px; background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                                    📋 复制JSON（更新时间戳）
+                                </button>
+                                <button onclick="closeDetailView()" style="flex: 1; padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                                    关闭
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="batteryStatus" class="battery-status"></div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script>
+        // 全局精度设置（默认秒级）
+        let currentPrecision = 'second'; // 'second' 或 'millisecond'
+
+        // 切换时间精度
+        function switchPrecision(precision) {
+            currentPrecision = precision;
+
+            // 更新按钮状态
+            document.getElementById('precisionSecondBtn').classList.remove('active');
+            document.getElementById('precisionMillisecondBtn').classList.remove('active');
+            document.getElementById(precision === 'second' ? 'precisionSecondBtn' : 'precisionMillisecondBtn').classList.add('active');
+
+            // 更新当前时间显示
+            updateCurrentTime();
+
+            // 更新占位符提示
+            const timestampInput = document.getElementById('timestampInput');
+            if (precision === 'second') {
+                timestampInput.placeholder = '输入时间戳，例如：1736232000';
+            } else {
+                timestampInput.placeholder = '输入时间戳（毫秒），例如：1736232000000';
+            }
+
+            // 清空转换结果
+            document.getElementById('timestampResult').className = 'converter-result';
+            document.getElementById('timestampResult').textContent = '等待转换...';
+            document.getElementById('dateResult').className = 'converter-result';
+            document.getElementById('dateResult').textContent = '等待转换...';
+            document.getElementById('copyDateResult').style.display = 'none';
+        }
+
+        // 实时更新当前时间戳
+        function updateCurrentTime() {
+            let now;
+            if (currentPrecision === 'second') {
+                now = Math.floor(Date.now() / 1000);
+            } else {
+                now = Date.now();
+            }
+
+            document.getElementById('currentTimestamp').textContent = now;
+
+            const currentDate = new Date();
+            let timeStr;
+            if (currentPrecision === 'second') {
+                timeStr = currentDate.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+            } else {
+                timeStr = currentDate.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }) + '.' + String(currentDate.getMilliseconds()).padStart(3, '0');
+            }
+
+            document.getElementById('currentTime').textContent = timeStr;
+        }
+
+        // 每秒更新时间显示
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime();
+
+        // 保存原始输入
+        let originalInput = '';
+
+        // 初始化起始时间输入框
+        function initStartTimeInput() {
+            const startTimeInput = document.getElementById('startTimeInput');
+            const useCurrentTime = document.getElementById('useCurrentTime');
+
+            // 设置初始值为当前时间
+            const now = new Date();
+            const localISOTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                .toISOString()
+                .slice(0, 19);
+            startTimeInput.value = localISOTime;
+
+            // 监听复选框变化
+            useCurrentTime.addEventListener('change', function() {
+                if (this.checked) {
+                    // 使用当前时间，禁用输入框
+                    startTimeInput.disabled = true;
+                    startTimeInput.style.opacity = '0.5';
+                    const now = new Date();
+                    const localISOTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                        .toISOString()
+                        .slice(0, 19);
+                    startTimeInput.value = localISOTime;
+                } else {
+                    // 使用自定义时间，启用输入框
+                    startTimeInput.disabled = false;
+                    startTimeInput.style.opacity = '1';
+                }
+            });
+
+            // 初始状态
+            startTimeInput.disabled = true;
+            startTimeInput.style.opacity = '0.5';
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('load', function() {
+            initStartTimeInput();
+        });
+
+        // 监听输入框粘贴事件，保存原始格式
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputTextarea = document.getElementById('inputText');
+
+            // 粘贴时保存原始格式
+            inputTextarea.addEventListener('paste', function(e) {
+                setTimeout(() => {
+                    originalInput = inputTextarea.value;
+                    console.log('已保存原始格式');
+                }, 50);
+            });
+
+            // 首次手动输入也保存（仅保存一次）
+            let hasManualInput = false;
+            inputTextarea.addEventListener('input', function(e) {
+                if (!hasManualInput && inputTextarea.value.trim() && !originalInput) {
+                    setTimeout(() => {
+                        originalInput = inputTextarea.value;
+                        hasManualInput = true;
+                        console.log('已保存手动输入的原始格式');
+                    }, 500);
+                }
+            });
+        });
+
+        // 时间戳转日期时间
+        function convertTimestampToDate() {
+            const timestampInput = document.getElementById('timestampInput').value.trim();
+            const resultDiv = document.getElementById('timestampResult');
+
+            if (!timestampInput) {
+                resultDiv.textContent = '❌ 请输入时间戳';
+                resultDiv.className = 'converter-result';
+                return;
+            }
+
+            const timestamp = parseInt(timestampInput);
+            if (isNaN(timestamp)) {
+                resultDiv.textContent = '❌ 时间戳格式错误,请输入纯数字';
+                resultDiv.className = 'converter-result show';
+                return;
+            }
+
+            try {
+                let date;
+                if (currentPrecision === 'second') {
+                    date = new Date(timestamp * 1000);
+                } else {
+                    date = new Date(timestamp);
+                }
+
+                // 格式化为中文日期时间
+                let dateStr = date.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+
+                // 如果是毫秒级，添加毫秒显示
+                if (currentPrecision === 'millisecond') {
+                    dateStr += '.' + String(date.getMilliseconds()).padStart(3, '0');
+                }
+
+                // ISO格式
+                let isoStr = date.toISOString().replace('T', ' ');
+                if (currentPrecision === 'second') {
+                    isoStr = isoStr.replace(/\.\d{3}Z$/, '');
+                } else {
+                    isoStr = isoStr.replace('Z', '');
+                }
+
+                resultDiv.innerHTML = `✅ 转换成功<br>📅 ${dateStr}<br>🌍 ${isoStr} (UTC)`;
+                resultDiv.className = 'converter-result success show';
+            } catch (error) {
+                resultDiv.textContent = '❌ 转换失败：' + error.message;
+                resultDiv.className = 'converter-result show';
+            }
+        }
+
+        // 日期时间转时间戳
+        function convertDateToTimestamp() {
+            const dateInput = document.getElementById('dateInput').value;
+            const resultDiv = document.getElementById('dateResult');
+            const copyBtn = document.getElementById('copyDateResult');
+
+            if (!dateInput) {
+                resultDiv.textContent = '❌ 请选择日期时间';
+                resultDiv.className = 'converter-result show';
+                copyBtn.style.display = 'none';
+                return;
+            }
+
+            try {
+                const date = new Date(dateInput);
+                let timestamp;
+
+                if (currentPrecision === 'second') {
+                    timestamp = Math.floor(date.getTime() / 1000);
+                } else {
+                    timestamp = date.getTime();
+                }
+
+                // 格式化显示
+                let dateStr = date.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+
+                // 如果是毫秒级，添加毫秒显示
+                if (currentPrecision === 'millisecond') {
+                    dateStr += '.' + String(date.getMilliseconds()).padStart(3, '0');
+                }
+
+                resultDiv.innerHTML = `✅ 转换成功<br>⏱️ 时间戳：${timestamp}<br>📅 ${dateStr}`;
+                resultDiv.className = 'converter-result success show';
+                resultDiv.dataset.timestamp = timestamp; // 保存时间戳值
+                copyBtn.style.display = 'block'; // 显示复制按钮
+            } catch (error) {
+                resultDiv.textContent = '❌ 转换失败：' + error.message;
+                resultDiv.className = 'converter-result show';
+                copyBtn.style.display = 'none';
+            }
+        }
+
+        // 复制当前时间戳
+        function copyCurrentTimestamp() {
+            const timestamp = document.getElementById('currentTimestamp').textContent;
+
+            if (!timestamp || timestamp === '-') {
+                showConverterStatus('❌ 时间戳未准备好', false);
+                return;
+            }
+
+            // 创建临时textarea用于复制
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = timestamp;
+            tempTextarea.style.position = 'fixed';
+            tempTextarea.style.left = '-9999px';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+
+            try {
+                document.execCommand('copy');
+                showConverterStatus('✅ 当前时间戳已复制到剪贴板！', true);
+            } catch (error) {
+                showConverterStatus('❌ 复制失败', false);
+            }
+
+            document.body.removeChild(tempTextarea);
+        }
+
+        // 复制转换器结果
+        function copyConverterResult(resultDivId) {
+            const resultDiv = document.getElementById(resultDivId);
+            const timestamp = resultDiv.dataset.timestamp;
+
+            if (!timestamp) {
+                showConverterStatus('❌ 没有可复制的时间戳', false);
+                return;
+            }
+
+            // 创建临时textarea用于复制
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = timestamp;
+            tempTextarea.style.position = 'fixed';
+            tempTextarea.style.left = '-9999px';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+
+            try {
+                document.execCommand('copy');
+                showConverterStatus('✅ 时间戳已复制到剪贴板！', true);
+            } catch (error) {
+                showConverterStatus('❌ 复制失败', false);
+            }
+
+            document.body.removeChild(tempTextarea);
+        }
+
+        // 支持Enter键快捷转换
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('timestampInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    convertTimestampToDate();
+                }
+            });
+
+            document.getElementById('dateInput').addEventListener('change', function() {
+                convertDateToTimestamp();
+            });
+
+            // 初始化日期选择器为当前时间
+            const now = new Date();
+            const localISOTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                .toISOString()
+                .slice(0, 19);
+            document.getElementById('dateInput').value = localISOTime;
+        });
+
+        function showStatus(message, isSuccess) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + (isSuccess ? 'success' : 'error') + ' show';
+
+            setTimeout(() => {
+                statusDiv.classList.remove('show');
+            }, 3000);
+        }
+
+        function showConverterStatus(message, isSuccess) {
+            const statusDiv = document.getElementById('converterStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = 'converter-status ' + (isSuccess ? 'success' : 'error') + ' show';
+
+            setTimeout(() => {
+                statusDiv.classList.remove('show');
+            }, 3000);
+        }
+
+        function showBarcodeStatus(message, isSuccess) {
+            const statusDiv = document.getElementById('barcodeStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = 'barcode-status ' + (isSuccess ? 'success' : 'error') + ' show';
+
+            setTimeout(() => {
+                statusDiv.classList.remove('show');
+            }, 3000);
+        }
+
+        function showUnicodeStatus(message, isSuccess) {
+            const statusDiv = document.getElementById('unicodeStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = 'unicode-status ' + (isSuccess ? 'success' : 'error') + ' show';
+
+            setTimeout(() => {
+                statusDiv.classList.remove('show');
+            }, 3000);
+        }
+
+        function showRandomTextStatus(message, isSuccess) {
+            const statusDiv = document.getElementById('randomTextStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = 'random-text-status ' + (isSuccess ? 'success' : 'error') + ' show';
+
+            setTimeout(() => {
+                statusDiv.classList.remove('show');
+            }, 3000);
+        }
+
+        function updateTimestamps() {
+            const input = document.getElementById('inputText').value;
+
+            if (!input.trim()) {
+                showStatus('❌ 请先输入JSON报文数据', false);
+                return;
+            }
+
+            // 获取递增间隔配置
+            const intervalInput = document.getElementById('intervalInput');
+            let interval = parseInt(intervalInput.value);
+
+            // 验证间隔值
+            if (isNaN(interval) || interval < 1 || interval > 3600) {
+                showStatus('❌ 递增间隔必须在1-3600秒之间', false);
+                intervalInput.value = 10; // 重置为默认值
+                return;
+            }
+
+            // 获取起始时间戳
+            let startTimestamp;
+            const useCurrentTime = document.getElementById('useCurrentTime').checked;
+
+            if (useCurrentTime) {
+                // 使用当前时间
+                startTimestamp = Math.floor(Date.now() / 1000);
+            } else {
+                // 使用自定义时间
+                const startTimeInput = document.getElementById('startTimeInput').value;
+                if (!startTimeInput) {
+                    showStatus('❌ 请选择起始时间', false);
+                    return;
+                }
+
+                const startDate = new Date(startTimeInput);
+                if (isNaN(startDate.getTime())) {
+                    showStatus('❌ 起始时间格式错误', false);
+                    return;
+                }
+
+                startTimestamp = Math.floor(startDate.getTime() / 1000);
+            }
+
+            try {
+                // 解析JSON验证格式
+                const data = JSON.parse(input);
+
+                // 使用正则替换方式直接替换timestamp值，完全保持原始格式
+                let output = input;
+                let timestampCount = 0;
+
+                // 匹配 "timestamp":数字 或 "timestamp": 数字 的模式
+                output = output.replace(/"timestamp"\s*:\s*(\d+)/g, function(match) {
+                    const newTimestamp = startTimestamp + (timestampCount * interval);
+                    timestampCount++;
+                    // 保持原始的空格格式
+                    if (match.includes(': ')) {
+                        return `"timestamp": ${newTimestamp}`;
+                    } else {
+                        return `"timestamp":${newTimestamp}`;
+                    }
+                });
+
+                // 隐藏的textarea用于复制
+                document.getElementById('outputText').value = output;
+
+                // 高亮显示timestamp（保持所有格式）
+                const highlightedOutput = output
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"timestamp"\s*:\s*(\d+)/g, function(match, number) {
+                        if (match.includes(': ')) {
+                            return `"timestamp": <span class="highlight-timestamp">${number}</span>`;
+                        } else {
+                            return `"timestamp":<span class="highlight-timestamp">${number}</span>`;
+                        }
+                    });
+
+                document.getElementById('outputDisplay').innerHTML = highlightedOutput;
+
+                // 显示输出结果区域
+                document.querySelector('.output-section').style.display = 'block';
+
+                // 格式化起始时间显示
+                const startDate = new Date(startTimestamp * 1000);
+                const startTimeStr = startDate.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+
+                showStatus(`✅ 成功更新 ${timestampCount} 个时间戳！起始时间：${startTimeStr}(${startTimestamp})，间隔：${interval}秒`, true);
+
+            } catch (error) {
+                showStatus('❌ JSON格式错误：' + error.message, false);
+            }
+        }
+
+        // 检测JSON缩进
+        function detectIndent(jsonStr) {
+            const lines = jsonStr.split('\n');
+            for (let line of lines) {
+                const match = line.match(/^(\s+)/);
+                if (match) {
+                    return match[1].length;
+                }
+            }
+            return 2; // 默认2个空格
+        }
+
+        // JSON格式化
+        function formatJSON() {
+            const input = document.getElementById('inputText').value;
+            if (!input.trim()) {
+                showStatus('❌ 请先输入JSON数据', false);
+                return;
+            }
+
+            try {
+                const data = JSON.parse(input);
+                const formatted = JSON.stringify(data, null, 2);
+                document.getElementById('inputText').value = formatted;
+                showStatus('✅ JSON格式化成功！', true);
+            } catch (error) {
+                showStatus('❌ JSON格式错误：' + error.message, false);
+            }
+        }
+
+        // JSON压缩
+        function compressJSON() {
+            const input = document.getElementById('inputText').value;
+            if (!input.trim()) {
+                showStatus('❌ 请先输入JSON数据', false);
+                return;
+            }
+
+            try {
+                const data = JSON.parse(input);
+                const compressed = JSON.stringify(data);
+                document.getElementById('inputText').value = compressed;
+                showStatus('✅ JSON压缩成功！', true);
+            } catch (error) {
+                showStatus('❌ JSON格式错误：' + error.message, false);
+            }
+        }
+
+        // 恢复原始格式
+        function restoreOriginal() {
+            const inputTextarea = document.getElementById('inputText');
+
+            if (!originalInput) {
+                showStatus('⚠️ 没有保存的原始格式', false);
+                return;
+            }
+
+            inputTextarea.value = originalInput;
+            showStatus('✅ 已恢复原始格式！', true);
+        }
+
+        function copyResult() {
+            const output = document.getElementById('outputText');
+
+            if (!output.value) {
+                showStatus('❌ 没有可复制的内容', false);
+                return;
+            }
+
+            // 创建临时textarea用于复制
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = output.value;
+            tempTextarea.style.position = 'fixed';
+            tempTextarea.style.left = '-9999px';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+
+            try {
+                document.execCommand('copy');
+                showStatus('✅ 已复制到剪贴板！', true);
+            } catch (error) {
+                showStatus('❌ 复制失败', false);
+            }
+
+            document.body.removeChild(tempTextarea);
+        }
+
+        function clearAll() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('outputText').value = '';
+            document.getElementById('outputDisplay').innerHTML = '更新后的JSON将显示在这里...';
+            originalInput = ''; // 清空时也清除保存的原始格式
+            // 隐藏输出结果区域
+            document.querySelector('.output-section').style.display = 'none';
+            showStatus('✅ 已清空所有内容', true);
+        }
+
+        // 支持快捷键
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Enter 更新时间戳
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                updateTimestamps();
+            }
+            // Ctrl/Cmd + Shift + C 复制结果
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+                e.preventDefault();
+                copyResult();
+            }
+        });
+
+        // ==================== 条形码/二维码功能 ====================
+        let currentCodeType = 'barcode'; // 默认为条形码
+        let generatedCanvas = null; // 保存生成的canvas用于下载
+
+        // 切换码类型
+        function switchCodeType(type) {
+            currentCodeType = type;
+
+            // 更新按钮状态
+            document.getElementById('barcodeBtn').classList.remove('active');
+            document.getElementById('qrcodeBtn').classList.remove('active');
+            document.getElementById(type + 'Btn').classList.add('active');
+
+            // 清空显示区域
+            const codeDisplay = document.getElementById('codeDisplay');
+            codeDisplay.innerHTML = '<p style="color: #999;">输入内容后点击"生成"按钮</p>';
+            document.getElementById('downloadBtn').style.display = 'none';
+            generatedCanvas = null;
+        }
+
+        // 生成码
+        function generateCode() {
+            const input = document.getElementById('codeInput').value.trim();
+            const codeDisplay = document.getElementById('codeDisplay');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            if (!input) {
+                showBarcodeStatus('❌ 请输入要生成的内容', false);
+                return;
+            }
+
+            // 清空显示区域
+            codeDisplay.innerHTML = '';
+            downloadBtn.style.display = 'none';
+            generatedCanvas = null;
+
+            try {
+                if (currentCodeType === 'barcode') {
+                    // 生成条形码
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.id = 'barcodeSvg';
+                    codeDisplay.appendChild(svg);
+
+                    JsBarcode(svg, input, {
+                        format: 'CODE128',
+                        width: 2,
+                        height: 100,
+                        displayValue: true,
+                        fontSize: 14,
+                        margin: 10
+                    });
+
+                    // 转换SVG为Canvas用于下载
+                    svgToCanvas(svg);
+
+                    const info = document.createElement('div');
+                    info.className = 'code-info';
+                    info.textContent = `条形码内容: ${input}`;
+                    codeDisplay.appendChild(info);
+
+                    showBarcodeStatus('✅ 条形码生成成功！', true);
+                } else {
+                    // 生成二维码
+                    const qrcodeContainer = document.createElement('div');
+                    qrcodeContainer.id = 'qrcodeContainer';
+                    codeDisplay.appendChild(qrcodeContainer);
+
+                    new QRCode(qrcodeContainer, {
+                        text: input,
+                        width: 200,
+                        height: 200,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+
+                    // 获取生成的canvas
+                    setTimeout(() => {
+                        generatedCanvas = qrcodeContainer.querySelector('canvas');
+                        if (generatedCanvas) {
+                            downloadBtn.style.display = 'block';
+                        }
+                    }, 100);
+
+                    const info = document.createElement('div');
+                    info.className = 'code-info';
+                    info.textContent = `二维码内容: ${input}`;
+                    codeDisplay.appendChild(info);
+
+                    showBarcodeStatus('✅ 二维码生成成功！', true);
+                }
+
+                downloadBtn.style.display = 'block';
+            } catch (error) {
+                codeDisplay.innerHTML = `<p style="color: #f44336;">生成失败：${error.message}</p>`;
+                showBarcodeStatus('❌ 生成失败：' + error.message, false);
+            }
+        }
+
+        // SVG转Canvas（用于条形码下载）
+        function svgToCanvas(svg) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const img = new Image();
+
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+
+            img.onload = function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                URL.revokeObjectURL(url);
+                generatedCanvas = canvas;
+            };
+
+            img.src = url;
+        }
+
+        // 下载生成的码
+        function downloadCode() {
+            if (!generatedCanvas) {
+                // 如果是条形码，重新获取SVG并转换
+                const svg = document.getElementById('barcodeSvg');
+                if (svg) {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const svgData = new XMLSerializer().serializeToString(svg);
+                    const img = new Image();
+
+                    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(svgBlob);
+
+                    img.onload = function() {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+                        URL.revokeObjectURL(url);
+
+                        // 下载
+                        const link = document.createElement('a');
+                        link.download = currentCodeType === 'barcode' ? 'barcode.png' : 'qrcode.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+
+                        showBarcodeStatus('✅ 图片已下载！', true);
+                    };
+
+                    img.src = url;
+                } else {
+                    showBarcodeStatus('❌ 没有可下载的内容', false);
+                }
+                return;
+            }
+
+            // 直接下载canvas
+            const link = document.createElement('a');
+            link.download = currentCodeType === 'barcode' ? 'barcode.png' : 'qrcode.png';
+            link.href = generatedCanvas.toDataURL('image/png');
+            link.click();
+
+            showBarcodeStatus('✅ 图片已下载！', true);
+        }
+
+        // 支持Enter键生成
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('codeInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    generateCode();
+                }
+            });
+        });
+
+        // 切换使用说明显示/隐藏
+        function toggleHelp() {
+            const helpContent = document.getElementById('helpContent');
+            const helpIcon = document.getElementById('helpIcon');
+            const helpText = document.getElementById('helpText');
+
+            if (helpContent.classList.contains('show')) {
+                helpContent.classList.remove('show');
+                helpIcon.textContent = '📖';
+                helpText.textContent = '使用说明';
+            } else {
+                helpContent.classList.add('show');
+                helpIcon.textContent = '📕';
+                helpText.textContent = '收起说明';
+            }
+        }
+
+        // 滚动到指定工具区域
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                // 更新菜单激活状态
+                document.querySelectorAll('.menu-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                event.target.closest('.menu-item').classList.add('active');
+            }
+        }
+
+        // 监听滚动事件,自动更新菜单激活状态
+        let scrollTimeout;
+
+        // ==================== Unicode转换功能 ====================
+        // 中文转Unicode
+        function convertChineseToUnicode() {
+            const input = document.getElementById('chineseInput').value;
+            const output = document.getElementById('unicodeOutput');
+
+            if (!input.trim()) {
+                showUnicodeStatus('❌ 请输入中文文本', false);
+                output.value = '';
+                output.classList.remove('show');
+                return;
+            }
+
+            try {
+                let result = '';
+                for (let i = 0; i < input.length; i++) {
+                    const char = input[i];
+                    // 判断是否为中文字符或需要转换的字符
+                    if (char.charCodeAt(0) > 127) {
+                        // 转换为\uXXXX格式
+                        const unicode = char.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0');
+                        result += '\\u' + unicode;
+                    } else {
+                        // ASCII字符保持原样
+                        result += char;
+                    }
+                }
+                output.value = result;
+                output.classList.add('show');
+                showUnicodeStatus('✅ 转换成功！', true);
+            } catch (error) {
+                output.value = '';
+                output.classList.remove('show');
+                showUnicodeStatus('❌ 转换失败：' + error.message, false);
+            }
+        }
+
+        // Unicode转中文
+        function convertUnicodeToChinese() {
+            const input = document.getElementById('unicodeInput').value;
+            const output = document.getElementById('chineseOutput');
+
+            if (!input.trim()) {
+                showUnicodeStatus('❌ 请输入Unicode编码', false);
+                output.value = '';
+                output.classList.remove('show');
+                return;
+            }
+
+            try {
+                // 处理\uXXXX格式的Unicode编码
+                let result = input.replace(/\\u([0-9a-fA-F]{4})/g, function(match, hex) {
+                    return String.fromCharCode(parseInt(hex, 16));
+                });
+
+                // 处理&#数字;格式的HTML实体
+                result = result.replace(/&#(\d+);/g, function(match, dec) {
+                    return String.fromCharCode(parseInt(dec, 10));
+                });
+
+                // 处理&#x十六进制;格式的HTML实体
+                result = result.replace(/&#x([0-9a-fA-F]+);/g, function(match, hex) {
+                    return String.fromCharCode(parseInt(hex, 16));
+                });
+
+                output.value = result;
+                output.classList.add('show');
+                showUnicodeStatus('✅ 转换成功！', true);
+            } catch (error) {
+                output.value = '';
+                output.classList.remove('show');
+                showUnicodeStatus('❌ 转换失败：' + error.message, false);
+            }
+        }
+
+        // ==================== 随机文字生成器功能 ====================
+        // 字符集定义
+        const CHAR_SETS = {
+            numbers: '0123456789',
+            lowercase: 'abcdefghijklmnopqrstuvwxyz',
+            uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            special: '!@#$%^&*()_+-=[]{}|;:,.<>?',
+            // 常用汉字（3500个常用字的一部分）
+            chinese: '的一是在不了有和人这中大为上个国我以要他时来用们生到作地于出就分对成会可主发年动同工也能下过子说产种面而方后多定行学法所民得经十三之进着等部度家电力里如水化高自二理起小物现实加量都两体制机当使点从业本去把性好应开它合还因由其些然前外天政四日那社义事平形相全表间样与关各重新线内数正心反你明看原又么利比或但质气第向道命此变条只没结解问意建月公无系军很情者最立代想已通并提直题党程展五果料象员革位入常文总次品式活设及管特件长求老头基资边流路级少图山统接知较将组见计别她手角期根论运农指几九区强放决西被干做必战先回则任取据处队南给色光门即保治北造百规热领七海口东导器压志世金增争济阶油思术极交受联什认六共权收证改清己美再采转更单风切打白教速花带安场身车例真务具万每目至达走积示议声报斗完类八离华名确才科张信马节话米整空元况今集温传土许步群广石记需段研界拉林律叫且究观越织装影算低持音众书布复容儿须际商非验连断深难近矿千周委素技备半办青省列习响约支般史感劳便团往酸历市克何除消构府称太准精值号率族维划选标写存候毛亲快效斯院查江型眼王按格养易置派层片始却专状育厂京识适属圆包火住调满县局照参红细引听该铁价严龙飞'
+        };
+
+        // 生成随机文字
+        function generateRandomText() {
+            const length = parseInt(document.getElementById('textLength').value);
+            const format = document.getElementById('outputFormat').value;
+
+            // 获取选中的字符类型
+            const includeNumbers = document.getElementById('includeNumbers').checked;
+            const includeLowercase = document.getElementById('includeLowercase').checked;
+            const includeUppercase = document.getElementById('includeUppercase').checked;
+            const includeSpecial = document.getElementById('includeSpecial').checked;
+            const includeChinese = document.getElementById('includeChinese').checked;
+
+            // 构建字符池
+            let charPool = '';
+            if (includeNumbers) charPool += CHAR_SETS.numbers;
+            if (includeLowercase) charPool += CHAR_SETS.lowercase;
+            if (includeUppercase) charPool += CHAR_SETS.uppercase;
+            if (includeSpecial) charPool += CHAR_SETS.special;
+            if (includeChinese) charPool += CHAR_SETS.chinese;
+
+            // 验证
+            if (!charPool) {
+                showRandomTextStatus('❌ 请至少选择一种字符类型', false);
+                return;
+            }
+
+            if (isNaN(length) || length < 1 || length > 10000) {
+                showRandomTextStatus('❌ 生成长度必须在1-10000之间', false);
+                return;
+            }
+
+            // 生成随机文字
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                const randomIndex = Math.floor(Math.random() * charPool.length);
+                result += charPool[randomIndex];
+            }
+
+            // 格式化输出
+            let formattedResult = result;
+            switch (format) {
+                case 'space':
+                    // 每10个字符加一个空格
+                    formattedResult = result.match(/.{1,10}/g).join(' ');
+                    break;
+                case 'comma':
+                    // 每个字符用逗号分隔
+                    formattedResult = result.split('').join(',');
+                    break;
+                case 'newline':
+                    // 每20个字符换行
+                    formattedResult = result.match(/.{1,20}/g).join('\n');
+                    break;
+                case 'continuous':
+                default:
+                    // 连续输出
+                    formattedResult = result;
+                    break;
+            }
+
+            // 显示结果
+            document.getElementById('randomTextResult').value = formattedResult;
+
+            // 显示输出区域
+            document.getElementById('randomTextOutput').classList.add('show');
+
+            // 显示统计信息
+            const info = document.getElementById('randomTextInfo');
+            const actualLength = formattedResult.length;
+            const charTypes = [];
+            if (includeNumbers) charTypes.push('数字');
+            if (includeLowercase) charTypes.push('小写字母');
+            if (includeUppercase) charTypes.push('大写字母');
+            if (includeSpecial) charTypes.push('特殊符号');
+            if (includeChinese) charTypes.push('常用汉字');
+
+            info.innerHTML = `✅ 生成成功！字符类型：${charTypes.join('、')} | 原始长度：${length} | 格式化后长度：${actualLength}`;
+            info.classList.add('show');
+
+            showRandomTextStatus('✅ 随机文字生成成功！', true);
+        }
+
+        // 复制随机文字结果
+        function copyRandomText() {
+            const result = document.getElementById('randomTextResult').value;
+
+            if (!result) {
+                showRandomTextStatus('❌ 没有可复制的内容', false);
+                return;
+            }
+
+            // 创建临时textarea用于复制
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = result;
+            tempTextarea.style.position = 'fixed';
+            tempTextarea.style.left = '-9999px';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+
+            try {
+                document.execCommand('copy');
+                showRandomTextStatus('✅ 随机文字已复制到剪贴板！', true);
+            } catch (error) {
+                showRandomTextStatus('❌ 复制失败', false);
+            }
+
+            document.body.removeChild(tempTextarea);
+        }
+
+        // ==================== MQTT报文管理功能 ====================
+        // 预设报文模板
+        const MQTT_PRESETS = {
+            battery: {
+                name: '设备满电报文',
+                topic: 'stag/card/${sn}/status/pub',
+                payload: {
+                    "timestamp": 1679645023,
+                    "battery": 100,
+                    "realBattery": 100,
+                    "voltage": 3800,
+                    "charger": 4,
+                    "step": 6421,
+                    "csq": 29
+                },
+                comments: {
+                    "battery": "虚拟电量百分比[0-100]",
+                    "realBattery": "真实电量百分比[0-100]",
+                    "voltage": "电压(mV)",
+                    "charger": "充电状态。0:未充电，1:脉冲充(电池激活)，2:恒流充，3:恒压充，4:充电停止(已充满)",
+                    "step": "今日步数",
+                    "csq": "CSQ信号强度"
+                }
+            },
+            lowBattery: {
+                name: '设备低电量报文',
+                topic: 'stag/card/${sn}/status/pub',
+                payload: {
+                    "timestamp": 1679645023,
+                    "battery": 1,
+                    "realBattery": 1,
+                    "voltage": 3800,
+                    "charger": 0,
+                    "step": 6421,
+                    "csq": 29
+                },
+                comments: {
+                    "battery": "虚拟电量百分比[0-100]",
+                    "realBattery": "真实电量百分比[0-100]",
+                    "voltage": "电压(mV)",
+                    "charger": "充电状态。0:未充电，1:脉冲充(电池激活)，2:恒流充，3:恒压充，4:充电停止(已充满)",
+                    "step": "今日步数",
+                    "csq": "CSQ信号强度"
+                }
+            }
+        };
+
+        // 构建不含注释的JSON字符串
+        function buildCleanJSON(payload) {
+            const currentTimestamp = Math.floor(Date.now() / 1000);
+            const updatedPayload = { ...payload, timestamp: currentTimestamp };
+            return JSON.stringify(updatedPayload, null, 4);
+        }
+
+        // 构建带注释的JSON字符串
+        function buildCommentedJSON(payload, comments) {
+            const currentTimestamp = Math.floor(Date.now() / 1000);
+            let result = '{\n';
+            const keys = Object.keys(payload);
+
+            keys.forEach((key, index) => {
+                const value = key === 'timestamp' ? currentTimestamp : payload[key];
+                const comment = comments[key];
+
+                // 添加缩进和键值对
+                result += `    "${key}": ${typeof value === 'string' ? '"' + value + '"' : value}`;
+
+                // 最后一项不加逗号，其他项需要加逗号
+                if (index < keys.length - 1) {
+                    result += ',';
+                }
+
+                // 添加注释
+                if (comment) {
+                    result += ` // ${comment}`;
+                }
+
+                // 换行
+                result += '\n';
+            });
+            result += '}';
+            return result;
+        }
+
+        // 复制预设报文（自动更新时间戳，不含注释，不含Topic）
+        function copyPresetMessage(presetKey) {
+            const preset = MQTT_PRESETS[presetKey];
+            if (!preset) {
+                showBatteryStatus('❌ 未找到预设报文模板', false);
+                return;
+            }
+
+            // 只构建JSON部分（不含Topic）
+            const message = buildCleanJSON(preset.payload);
+
+            // 创建临时textarea用于复制
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = message;
+            tempTextarea.style.position = 'fixed';
+            tempTextarea.style.left = '-9999px';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+
+            try {
+                document.execCommand('copy');
+                const currentTimestamp = Math.floor(Date.now() / 1000);
+                showBatteryStatus(`✅ ${preset.name}已复制！时间戳：${currentTimestamp}`, true);
+            } catch (error) {
+                showBatteryStatus('❌ 复制失败：' + error.message, false);
+            }
+
+            document.body.removeChild(tempTextarea);
+        }
+
+        // 查看预设报文详情（含注释，可编辑）
+        function viewPresetMessage(presetKey) {
+            const preset = MQTT_PRESETS[presetKey];
+            if (!preset) {
+                showBatteryStatus('❌ 未找到预设报文模板', false);
+                return;
+            }
+
+            // 显示Topic（使用value而不是textContent）
+            document.getElementById('mqttTopicDisplay').value = preset.topic;
+
+            // 只显示JSON部分（含注释）
+            const jsonContent = buildCommentedJSON(preset.payload, preset.comments);
+            document.getElementById('mqttDetail').value = jsonContent;
+            document.getElementById('mqttDetailSection').style.display = 'block';
+
+            // 滚动到详情区域
+            document.getElementById('mqttDetailSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // 复制Topic
+        function copyTopicOnly() {
+            const topic = document.getElementById('mqttTopicDisplay').value.trim();
+
+            if (!topic) {
+                showBatteryStatus('❌ Topic为空', false);
+                return;
+            }
+
+            // 创建临时textarea用于复制
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = topic;
+            tempTextarea.style.position = 'fixed';
+            tempTextarea.style.left = '-9999px';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+
+            try {
+                document.execCommand('copy');
+                showBatteryStatus(`✅ Topic已复制：${topic}`, true);
+            } catch (error) {
+                showBatteryStatus('❌ 复制失败：' + error.message, false);
+            }
+
+            document.body.removeChild(tempTextarea);
+        }
+
+        // 复制详情区域的报文（更新时间戳后复制）
+        function copyDetailMessage() {
+            const detailContent = document.getElementById('mqttDetail').value.trim();
+
+            if (!detailContent) {
+                showBatteryStatus('❌ 没有可复制的内容', false);
+                return;
+            }
+
+            try {
+                // 直接处理JSON内容（不需要跳过Topic行）
+                const jsonLines = detailContent.split('\n');
+
+                // 逐行清理注释，保留有效的JSON内容
+                const cleanedLines = [];
+                for (let line of jsonLines) {
+                    // 查找注释的位置 //
+                    const commentIndex = line.indexOf('//');
+
+                    if (commentIndex !== -1) {
+                        // 存在注释，截取注释前的部分
+                        let cleanLine = line.substring(0, commentIndex).trimEnd();
+
+                        // 如果这行在去除注释后还有内容，保留它
+                        if (cleanLine.trim()) {
+                            cleanedLines.push(cleanLine);
+                        }
+                    } else {
+                        // 不存在注释，保留整行
+                        cleanedLines.push(line);
+                    }
+                }
+
+                // 重新组合JSON字符串
+                const jsonContent = cleanedLines.join('\n');
+
+                // 解析JSON
+                const data = JSON.parse(jsonContent);
+
+                // 更新时间戳
+                const currentTimestamp = Math.floor(Date.now() / 1000);
+                data.timestamp = currentTimestamp;
+
+                // 格式化JSON（不含注释）
+                const cleanJSON = JSON.stringify(data, null, 4);
+
+                // 创建临时textarea用于复制
+                const tempTextarea = document.createElement('textarea');
+                tempTextarea.value = cleanJSON;
+                tempTextarea.style.position = 'fixed';
+                tempTextarea.style.left = '-9999px';
+                document.body.appendChild(tempTextarea);
+                tempTextarea.select();
+
+                document.execCommand('copy');
+                showBatteryStatus(`✅ JSON已复制！时间戳已更新为：${currentTimestamp}`, true);
+
+                document.body.removeChild(tempTextarea);
+            } catch (error) {
+                console.error('解析错误:', error);
+                console.error('原始内容:', detailContent);
+                showBatteryStatus('❌ 复制失败：' + error.message, false);
+            }
+        }
+
+        // 关闭详情视图
+        function closeDetailView() {
+            document.getElementById('mqttDetailSection').style.display = 'none';
+        }
+
+        // 显示状态消息
+        function showBatteryStatus(message, isSuccess) {
+            const statusDiv = document.getElementById('batteryStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = 'battery-status ' + (isSuccess ? 'success' : 'error') + ' show';
+
+            setTimeout(() => {
+                statusDiv.classList.remove('show');
+            }, 3000);
+        }
+
+        // 更新滚动监听的sections列表
+        window.addEventListener('scroll', function() {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(function() {
+                const sections = ['timestamp-section', 'converter-section', 'barcode-section', 'unicode-section', 'random-text-section', 'battery-section'];
+                const menuItems = document.querySelectorAll('.menu-item');
+
+                let currentSection = '';
+                sections.forEach(sectionId => {
+                    const section = document.getElementById(sectionId);
+                    if (section) {
+                        const rect = section.getBoundingClientRect();
+                        // 如果区域在视口中间位置附近
+                        if (rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2) {
+                            currentSection = sectionId;
+                        }
+                    }
+                });
+
+                // 如果找到当前区域,更新菜单激活状态
+                if (currentSection) {
+                    menuItems.forEach((item, index) => {
+                        item.classList.remove('active');
+                        if (sections[index] === currentSection) {
+                            item.classList.add('active');
+                        }
+                    });
+                }
+            }, 100);
+        }, true);
+    </script>
+</body>
+</html>
