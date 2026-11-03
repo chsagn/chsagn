@@ -1520,6 +1520,27 @@
             text-decoration: line-through;
         }
 
+        .diff-editable {
+            background: #fff;
+            overflow: auto;
+        }
+
+        .diff-editable:empty:before {
+            content: attr(data-placeholder);
+            color: #999;
+        }
+
+        .diff-editable .diff-del {
+            color: #b71c1c;
+            background: #ffcdd2;
+            text-decoration: none;
+        }
+
+        .diff-editable .diff-add {
+            color: #1b5e20;
+            background: #c8e6c9;
+        }
+
         .diff-arrow {
             color: #888;
             padding: 0 2px;
@@ -1824,11 +1845,11 @@
                 <div class="tool-grid">
                     <div class="tool-panel">
                         <div class="unicode-label">左侧文本</div>
-                        <textarea id="textDiffLeft" class="tool-textarea" placeholder="粘贴第一段文本或日志"></textarea>
+                        <div id="textDiffLeft" class="tool-textarea diff-editable" contenteditable="true" data-placeholder="粘贴第一段文本或日志"></div>
                     </div>
                     <div class="tool-panel">
                         <div class="unicode-label">右侧文本</div>
-                        <textarea id="textDiffRight" class="tool-textarea" placeholder="粘贴第二段文本或日志"></textarea>
+                        <div id="textDiffRight" class="tool-textarea diff-editable" contenteditable="true" data-placeholder="粘贴第二段文本或日志"></div>
                     </div>
                 </div>
                 <div class="tool-actions">
@@ -3103,13 +3124,25 @@
                 if (part.type === 'add') return arrow + '<span class="diff-add">' + body + '</span>';
                 return body;
             }).join('') + '</div>';
-            return { html: html, changes: changes };
+            return { html: html, changes: changes, parts: parts };
+        }
+
+        function renderDiffSide(parts, side) {
+            return parts.filter(part => side === 'left' ? part.type !== 'add' : part.type !== 'del').map(part => {
+                const body = escapeHtml(part.text);
+                if (part.type === 'same') return body;
+                return '<span class="' + (side === 'left' ? 'diff-del' : 'diff-add') + '">' + body + '</span>';
+            }).join('');
+        }
+
+        function readDiffText(elementId) {
+            return document.getElementById(elementId).innerText.replace(/\u00a0/g, ' ').replace(/\r/g, '');
         }
 
         function comparePlainText() {
             const view = document.getElementById('textDiffView');
-            const left = document.getElementById('textDiffLeft').value.split(/\r?\n/);
-            const right = document.getElementById('textDiffRight').value.split(/\r?\n/);
+            const left = readDiffText('textDiffLeft').split(/\n/);
+            const right = readDiffText('textDiffRight').split(/\n/);
             if (left.length > 2000 || right.length > 2000) {
                 view.textContent = '单侧超过 2000 行，请先截短后再对比。';
                 showPanelStatus('textDiffStatus', '❌ 文本过长', false);
@@ -3124,6 +3157,8 @@
                 }
             }
             const rows = [];
+            const leftChunks = [];
+            const rightChunks = [];
             let i = 0;
             let j = 0;
             let changes = 0;
@@ -3134,12 +3169,16 @@
                 if (deleted.length && added.length) {
                     const result = inlineTokenDiff(deleted.join('\n'), added.join('\n'));
                     rows.push(result.html);
+                    leftChunks.push(renderDiffSide(result.parts, 'left'));
+                    rightChunks.push(renderDiffSide(result.parts, 'right'));
                     changes += result.changes;
                 } else if (deleted.length) {
                     deleted.forEach(line => rows.push('<div class="diff-del">- ' + escapeHtml(line) + '</div>'));
+                    leftChunks.push(deleted.map(line => '<span class="diff-del">' + escapeHtml(line) + '</span>').join('\n'));
                     changes += deleted.length;
                 } else {
                     added.forEach(line => rows.push('<div class="diff-add">+ ' + escapeHtml(line) + '</div>'));
+                    rightChunks.push(added.map(line => '<span class="diff-add">' + escapeHtml(line) + '</span>').join('\n'));
                     changes += added.length;
                 }
                 deleted.length = 0;
@@ -3148,7 +3187,10 @@
             while (i < n && j < m) {
                 if (left[i] === right[j]) {
                     flushHunk();
-                    rows.push('<div>' + escapeHtml(left[i]) + '</div>');
+                    const same = escapeHtml(left[i]);
+                    rows.push('<div>' + same + '</div>');
+                    leftChunks.push(same);
+                    rightChunks.push(same);
                     i++;
                     j++;
                 } else if (dp[i + 1][j] >= dp[i][j + 1]) {
@@ -3162,6 +3204,8 @@
             while (i < n) deleted.push(left[i++]);
             while (j < m) added.push(right[j++]);
             flushHunk();
+            document.getElementById('textDiffLeft').innerHTML = leftChunks.join('\n');
+            document.getElementById('textDiffRight').innerHTML = rightChunks.join('\n');
             view.innerHTML = changes ? rows.join('') : '两段文本一致。';
             showPanelStatus('textDiffStatus', changes ? '✅ 有 ' + changes + ' 处差异' : '✅ 文本一致', true);
         }
