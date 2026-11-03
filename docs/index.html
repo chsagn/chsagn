@@ -1508,6 +1508,22 @@
 
         .diff-del { background: #ffebee; color: #c62828; }
         .diff-add { background: #e8f5e9; color: #2e7d32; }
+        .diff-inline span.diff-del,
+        .diff-inline span.diff-add {
+            display: inline;
+            border-radius: 2px;
+            padding: 0 2px;
+            margin: 0 1px;
+        }
+
+        .diff-inline span.diff-del {
+            text-decoration: line-through;
+        }
+
+        .diff-arrow {
+            color: #888;
+            padding: 0 2px;
+        }
         .diff-change { background: #fff8e1; color: #ef6c00; }
 
         .sample-row {
@@ -1818,7 +1834,7 @@
                 <div class="tool-actions">
                     <button type="button" onclick="comparePlainText()">开始对比</button>
                 </div>
-                <div id="textDiffView" class="diff-view">红色是左侧独有，绿色是右侧独有。</div>
+                <div id="textDiffView" class="diff-view">相同内容保持原样。红色是左侧多出的，绿色是右侧多出的。</div>
                 <div id="textDiffStatus" class="unicode-status"></div>
             </div>
 
@@ -3033,6 +3049,63 @@
             }
         }
 
+        function tokenizeForDiff(text) {
+            return text.split(/([&?=/\s])/).filter(part => part !== '');
+        }
+
+        function inlineTokenDiff(leftText, rightText) {
+            const left = tokenizeForDiff(leftText);
+            const right = tokenizeForDiff(rightText);
+            if (left.length * right.length > 250000) {
+                return {
+                    html: '<div class="diff-del">- ' + escapeHtml(leftText) + '</div><div class="diff-add">+ ' + escapeHtml(rightText) + '</div>',
+                    changes: 1
+                };
+            }
+            const n = left.length;
+            const m = right.length;
+            const dp = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+            for (let i = n - 1; i >= 0; i--) {
+                for (let j = m - 1; j >= 0; j--) {
+                    dp[i][j] = left[i] === right[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+                }
+            }
+            const parts = [];
+            let i = 0;
+            let j = 0;
+            function push(type, text) {
+                const last = parts[parts.length - 1];
+                if (last && last.type === type) last.text += text;
+                else parts.push({ type: type, text: text });
+            }
+            while (i < n && j < m) {
+                if (left[i] === right[j]) {
+                    push('same', left[i]);
+                    i++;
+                    j++;
+                } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+                    push('del', left[i]);
+                    i++;
+                } else {
+                    push('add', right[j]);
+                    j++;
+                }
+            }
+            while (i < n) push('del', left[i++]);
+            while (j < m) push('add', right[j++]);
+            const changes = parts.filter(part => part.type !== 'same').length;
+            const html = '<div class="diff-inline">' + parts.map((part, index) => {
+                const body = escapeHtml(part.text);
+                const arrow = index > 0 && parts[index - 1].type === 'del' && part.type === 'add'
+                    ? '<span class="diff-arrow">→</span>'
+                    : '';
+                if (part.type === 'del') return arrow + '<span class="diff-del">' + body + '</span>';
+                if (part.type === 'add') return arrow + '<span class="diff-add">' + body + '</span>';
+                return body;
+            }).join('') + '</div>';
+            return { html: html, changes: changes };
+        }
+
         function comparePlainText() {
             const view = document.getElementById('textDiffView');
             const left = document.getElementById('textDiffLeft').value.split(/\r?\n/);
@@ -3054,33 +3127,43 @@
             let i = 0;
             let j = 0;
             let changes = 0;
+            const deleted = [];
+            const added = [];
+            function flushHunk() {
+                if (!deleted.length && !added.length) return;
+                if (deleted.length && added.length) {
+                    const result = inlineTokenDiff(deleted.join('\n'), added.join('\n'));
+                    rows.push(result.html);
+                    changes += result.changes;
+                } else if (deleted.length) {
+                    deleted.forEach(line => rows.push('<div class="diff-del">- ' + escapeHtml(line) + '</div>'));
+                    changes += deleted.length;
+                } else {
+                    added.forEach(line => rows.push('<div class="diff-add">+ ' + escapeHtml(line) + '</div>'));
+                    changes += added.length;
+                }
+                deleted.length = 0;
+                added.length = 0;
+            }
             while (i < n && j < m) {
                 if (left[i] === right[j]) {
-                    rows.push('<div>  ' + escapeHtml(left[i]) + '</div>');
+                    flushHunk();
+                    rows.push('<div>' + escapeHtml(left[i]) + '</div>');
                     i++;
                     j++;
                 } else if (dp[i + 1][j] >= dp[i][j + 1]) {
-                    rows.push('<div class="diff-del">- ' + escapeHtml(left[i]) + '</div>');
-                    changes++;
+                    deleted.push(left[i]);
                     i++;
                 } else {
-                    rows.push('<div class="diff-add">+ ' + escapeHtml(right[j]) + '</div>');
-                    changes++;
+                    added.push(right[j]);
                     j++;
                 }
             }
-            while (i < n) {
-                rows.push('<div class="diff-del">- ' + escapeHtml(left[i]) + '</div>');
-                changes++;
-                i++;
-            }
-            while (j < m) {
-                rows.push('<div class="diff-add">+ ' + escapeHtml(right[j]) + '</div>');
-                changes++;
-                j++;
-            }
+            while (i < n) deleted.push(left[i++]);
+            while (j < m) added.push(right[j++]);
+            flushHunk();
             view.innerHTML = changes ? rows.join('') : '两段文本一致。';
-            showPanelStatus('textDiffStatus', changes ? '✅ 有 ' + changes + ' 行差异' : '✅ 文本一致', true);
+            showPanelStatus('textDiffStatus', changes ? '✅ 有 ' + changes + ' 处差异' : '✅ 文本一致', true);
         }
 
         function bytesToBase64(text) {
