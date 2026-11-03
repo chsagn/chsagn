@@ -196,6 +196,25 @@
             text-align: center;
         }
 
+        .time-block {
+            margin-top: 18px;
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .time-block-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #667eea;
+            margin: 14px 0 10px;
+        }
+
+        .time-block-title:first-child {
+            margin-top: 0;
+        }
+
         .converter-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1597,12 +1616,8 @@
         .codec-section .tool-title { color: #6a1b9a; }
         .jwt-section { background: #fff8e1; border-color: #f9a825; }
         .jwt-section .tool-title { color: #f57f17; }
-        .zone-section { background: #e0f2f1; border-color: #00897b; }
-        .zone-section .tool-title { color: #00695c; }
         .lang-section { background: #fce4ec; border-color: #d81b60; }
         .lang-section .tool-title { color: #ad1457; }
-        .locale-section { background: #fff3e0; border-color: #fb8c00; }
-        .locale-section .tool-title { color: #ef6c00; }
 
         .zone-grid, .locale-grid {
             display: grid;
@@ -1635,16 +1650,15 @@
             color: #777;
         }
 
-        .lang-line {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 8px;
+        .lang-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
         }
 
-        .lang-text {
-            flex: 1;
-            word-break: break-word;
+        .lang-grid .tool-textarea {
+            min-height: 120px;
+            margin-top: 8px;
         }
 
         .lang-bar {
@@ -1669,7 +1683,7 @@
         }
 
         @media (max-width: 768px) {
-            .tool-grid { grid-template-columns: 1fr; }
+            .tool-grid, .lang-grid { grid-template-columns: 1fr; }
         }
 
     </style>
@@ -1696,7 +1710,7 @@
         <div class="sidebar-title">🛠️ 工具导航</div>
         <div class="menu-item active" onclick="scrollToSection('converter-section')">
             <span>🔄</span>
-            <span>时间转换</span>
+            <span>时间工具</span>
         </div>
         <div class="menu-item" onclick="scrollToSection('barcode-section')">
             <span>📊</span>
@@ -1726,30 +1740,18 @@
             <span>🎫</span>
             <span>JWT解码</span>
         </div>
-        <div class="menu-item" onclick="scrollToSection('zone-section')">
-            <span>🌍</span>
-            <span>多时区</span>
-        </div>
-        <div class="menu-item" onclick="scrollToSection('lang-section')">
-            <span>🈶</span>
-            <span>多语言长度</span>
-        </div>
-        <div class="menu-item" onclick="scrollToSection('locale-section')">
-            <span>📅</span>
-            <span>日期格式</span>
-        </div>
     </div>
 
     <div class="container">
         <div class="header">
             <h1><img src="cat.png" alt="猫咪图标" style="width: 32px; height: 32px; vertical-align: middle; margin-right: 8px; background: transparent; mix-blend-mode: multiply;"> 小天才工具包</h1>
-            <p>时间转换、多时区、日期格式、多语言长度、条形码/二维码、JSON、文本对比、编码转换、JWT 解码、测试数据、Unicode</p>
+            <p>时间工具、随机文字、条形码/二维码、JSON、文本对比、编码转换、JWT 解码、测试数据、Unicode</p>
         </div>
 
         <div class="content">
             <!-- 时间转换工具 -->
             <div class="converter-section" id="converter-section">
-                <div class="converter-title">🔄 时间转换工具</div>
+                <div class="converter-title">🔄 时间工具</div>
 
                 <!-- 当前时间戳显示 + 精度配置 -->
                 <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 20px; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
@@ -1796,6 +1798,18 @@
                     </div>
                 </div>
                 <div id="converterStatus" class="converter-status"></div>
+
+                <div class="time-block">
+                    <div class="tool-actions">
+                        <input type="datetime-local" id="zoneTimeInput" class="zone-input" step="1" />
+                        <button type="button" onclick="useCurrentZoneTime()">使用当前时间</button>
+                        <button type="button" class="secondary" onclick="copyLocaleFormats(this)">复制日期格式</button>
+                    </div>
+                    <div class="time-block-title">多时区</div>
+                    <div id="zoneGrid" class="zone-grid"></div>
+                    <div class="time-block-title">日期格式</div>
+                    <div id="localeGrid" class="locale-grid"></div>
+                </div>
             </div>
 
             <!-- 条形码/二维码生成工具 -->
@@ -1872,6 +1886,14 @@
                             <div class="char-type-checkbox">
                                 <input type="checkbox" id="includeChinese" checked />
                                 <label for="includeChinese">常用汉字</label>
+                            </div>
+                            <div class="char-type-checkbox">
+                                <input type="checkbox" id="includeEnglish" />
+                                <label for="includeEnglish">英文单词</label>
+                            </div>
+                            <div class="char-type-checkbox">
+                                <input type="checkbox" id="includeGerman" />
+                                <label for="includeGerman">德文单词</label>
                             </div>
                         </div>
                         <button class="btn-generate-text" onclick="generateRandomText()">🎲 生成随机文字</button>
@@ -2006,34 +2028,6 @@
                     <textarea id="jwtOutput" class="tool-textarea" readonly placeholder="Header 和 Payload 会显示在这里"></textarea>
                 </div>
                 <div id="jwtStatus" class="unicode-status"></div>
-            </div>
-
-            <div class="tool-section zone-section" id="zone-section">
-                <div class="tool-title">🌍 多时区时间</div>
-                <div class="tool-panel">
-                    <div class="tool-actions">
-                        <input type="datetime-local" id="zoneTimeInput" class="zone-input" step="1" />
-                        <button type="button" onclick="useCurrentZoneTime()">使用当前时间</button>
-                    </div>
-                    <div id="zoneGrid" class="zone-grid"></div>
-                </div>
-            </div>
-
-            <div class="tool-section lang-section" id="lang-section">
-                <div class="tool-title">🈶 多语言长度样本</div>
-                <div id="langSamples"></div>
-            </div>
-
-            <div class="tool-section locale-section" id="locale-section">
-                <div class="tool-title">📅 日期格式对照</div>
-                <div class="tool-panel">
-                    <div class="tool-actions">
-                        <input type="datetime-local" id="localeTimeInput" class="zone-input" step="1" />
-                        <button type="button" onclick="useCurrentLocaleTime()">使用当前时间</button>
-                        <button type="button" class="secondary" onclick="copyLocaleFormats(this)">复制结果</button>
-                    </div>
-                    <div id="localeGrid" class="locale-grid"></div>
-                </div>
             </div>
 
         </div>
@@ -2886,6 +2880,11 @@
             chinese: '的一是在不了有和人这中大为上个国我以要他时来用们生到作地于出就分对成会可主发年动同工也能下过子说产种面而方后多定行学法所民得经十三之进着等部度家电力里如水化高自二理起小物现实加量都两体制机当使点从业本去把性好应开它合还因由其些然前外天政四日那社义事平形相全表间样与关各重新线内数正心反你明看原又么利比或但质气第向道命此变条只没结解问意建月公无系军很情者最立代想已通并提直题党程展五果料象员革位入常文总次品式活设及管特件长求老头基资边流路级少图山统接知较将组见计别她手角期根论运农指几九区强放决西被干做必战先回则任取据处队南给色光门即保治北造百规热领七海口东导器压志世金增争济阶油思术极交受联什认六共权收证改清己美再采转更单风切打白教速花带安场身车例真务具万每目至达走积示议声报斗完类八离华名确才科张信马节话米整空元况今集温传土许步群广石记需段研界拉林律叫且究观越织装影算低持音众书布复容儿须际商非验连断深难近矿千周委素技备半办青省列习响约支般史感劳便团往酸历市克何除消构府称太准精值号率族维划选标写存候毛亲快效斯院查江型眼王按格养易置派层片始却专状育厂京识适属圆包火住调满县局照参红细引听该铁价严龙飞'
         };
 
+        const WORD_SETS = {
+            english: ['please', 'enter', 'street', 'city', 'postal', 'code', 'payment', 'failed', 'retry', 'later', 'custom', 'photo', 'blanket', 'order', 'shipping', 'address', 'discount', 'limited', 'free', 'gift', 'cart', 'checkout', 'quantity', 'description', 'preview', 'button', 'error', 'required', 'invalid', 'card', 'coupon', 'tracking', 'delivery', 'refund', 'size', 'color', 'personalized', 'subtotal', 'total', 'continue', 'confirm', 'apartment', 'phone', 'email', 'country', 'state', 'estimated', 'arrival', 'stock', 'apply', 'remove', 'save', 'cancel', 'buy', 'now'],
+            german: ['Bitte', 'Straße', 'Stadt', 'Postleitzahl', 'Zahlung', 'fehlgeschlagen', 'Personalisierte', 'Fotodecke', 'kostenloser', 'Versand', 'Rabatt', 'begrenzt', 'Bestellung', 'Adresse', 'Geschenk', 'Warenkorb', 'Lieferadresse', 'Hausnummer', 'Zahlungsart', 'Gutschein', 'Sonderangebot', 'Kundenkonto', 'Bestellnummer', 'Versandkosten', 'Rechnung', 'Stornierung', 'Rücksendung', 'Größe', 'Farbe', 'Beschreibung', 'Vorschaubild', 'Schaltfläche', 'Fehlermeldung', 'Pflichtfeld', 'ungültig', 'wiederholen', 'später', 'Karte', 'Menge', 'Stück']
+        };
+
         // 生成随机文字
         function generateRandomText() {
             const length = parseInt(document.getElementById('textLength').value);
@@ -2897,6 +2896,8 @@
             const includeUppercase = document.getElementById('includeUppercase').checked;
             const includeSpecial = document.getElementById('includeSpecial').checked;
             const includeChinese = document.getElementById('includeChinese').checked;
+            const includeEnglish = document.getElementById('includeEnglish').checked;
+            const includeGerman = document.getElementById('includeGerman').checked;
 
             // 构建字符池
             let charPool = '';
@@ -2906,8 +2907,13 @@
             if (includeSpecial) charPool += CHAR_SETS.special;
             if (includeChinese) charPool += CHAR_SETS.chinese;
 
+            const sources = [];
+            if (charPool) sources.push({ type: 'char', items: charPool });
+            if (includeEnglish) sources.push({ type: 'word', items: WORD_SETS.english });
+            if (includeGerman) sources.push({ type: 'word', items: WORD_SETS.german });
+
             // 验证
-            if (!charPool) {
+            if (!sources.length) {
                 showRandomTextStatus('❌ 请至少选择一种字符类型', false);
                 return;
             }
@@ -2917,12 +2923,19 @@
                 return;
             }
 
-            // 生成随机文字
+            // 生成随机文字。英文和德文按单词拼接，最后截到指定长度。
             let result = '';
-            for (let i = 0; i < length; i++) {
-                const randomIndex = Math.floor(Math.random() * charPool.length);
-                result += charPool[randomIndex];
+            while (result.length < length) {
+                const source = sources[Math.floor(Math.random() * sources.length)];
+                if (source.type === 'char') {
+                    result += source.items[Math.floor(Math.random() * source.items.length)];
+                    continue;
+                }
+                const word = source.items[Math.floor(Math.random() * source.items.length)];
+                if (result && !/\s$/.test(result)) result += ' ';
+                result += word;
             }
+            result = result.slice(0, length);
 
             // 格式化输出
             let formattedResult = result;
@@ -2961,6 +2974,8 @@
             if (includeUppercase) charTypes.push('大写字母');
             if (includeSpecial) charTypes.push('特殊符号');
             if (includeChinese) charTypes.push('常用汉字');
+            if (includeEnglish) charTypes.push('英文单词');
+            if (includeGerman) charTypes.push('德文单词');
 
             info.innerHTML = `✅ 生成成功！字符类型：${charTypes.join('、')} | 原始长度：${length} | 格式化后长度：${actualLength}`;
             info.classList.add('show');
@@ -3500,7 +3515,6 @@
             { id: 'Australia/Sydney', name: '澳洲' }
         ];
         let zoneFollowNow = true;
-        let localeFollowNow = true;
 
         function pad2(number) {
             return String(number).padStart(2, '0');
@@ -3531,9 +3545,14 @@
             };
         }
 
+        function currentZoneDate() {
+            if (zoneFollowNow) return new Date();
+            const source = new Date(document.getElementById('zoneTimeInput').value);
+            return isNaN(source.getTime()) ? new Date() : source;
+        }
+
         function renderZones() {
-            const source = zoneFollowNow ? new Date() : new Date(document.getElementById('zoneTimeInput').value);
-            const date = isNaN(source.getTime()) ? new Date() : source;
+            const date = currentZoneDate();
             if (zoneFollowNow) document.getElementById('zoneTimeInput').value = toDatetimeLocalValue(date);
             document.getElementById('zoneGrid').innerHTML = WORLD_ZONES.map(zone => {
                 const part = zoneParts(date, zone.id);
@@ -3541,6 +3560,7 @@
                     + '<div class="zone-time">' + part.date + ' ' + part.time + '</div>'
                     + '<div class="zone-sub">' + part.name + '</div></div>';
             }).join('');
+            renderLocaleFormats(date);
         }
 
         function useCurrentZoneTime() {
@@ -3548,43 +3568,8 @@
             renderZones();
         }
 
-        const LANG_SAMPLES = [
-            { scene: '按钮', zh: '立即购买', en: 'Buy now', de: 'Jetzt kaufen' },
-            { scene: '商品名', zh: '定制照片毛毯', en: 'Custom Photo Blanket', de: 'Personalisierte Fotodecke' },
-            { scene: '促销条文', zh: '满50美元减10美元，限时包邮', en: '$10 off $50, free shipping for a limited time', de: '10 $ Rabatt ab 50 $, zeitlich begrenzter kostenloser Versand' },
-            { scene: '地址提示', zh: '请填写街道、城市和邮编', en: 'Please enter street, city and postal code', de: 'Bitte Straße, Stadt und Postleitzahl eingeben' },
-            { scene: '支付失败', zh: '支付失败，请更换卡或稍后重试', en: 'Payment failed. Try another card or retry later.', de: 'Zahlung fehlgeschlagen. Bitte eine andere Karte verwenden oder es später erneut versuchen.' }
-        ];
-
-        function renderLangSamples() {
-            document.getElementById('langSamples').innerHTML = LANG_SAMPLES.map((sample, index) => {
-                const rows = [
-                    { label: '中文', text: sample.zh },
-                    { label: 'English', text: sample.en },
-                    { label: 'Deutsch', text: sample.de }
-                ];
-                const max = Math.max(sample.zh.length, sample.en.length, sample.de.length);
-                return '<div class="lang-card" style="margin-bottom:10px;"><div class="lang-scene">' + sample.scene + '</div>'
-                    + rows.map(row => {
-                        const width = Math.round(row.text.length / max * 100);
-                        return '<div class="lang-line"><div class="lang-text"><strong>' + row.label + '</strong> '
-                            + escapeHtml(row.text) + '<div class="lang-count">' + row.text.length + ' 个字符</div>'
-                            + '<div class="lang-bar"><span style="width:' + width + '%"></span></div></div>'
-                            + '<button type="button" class="secondary" onclick="copyLangSample(' + index + ',\'' + row.label + '\', this)">复制</button></div>';
-                    }).join('') + '</div>';
-            }).join('');
-        }
-
-        function copyLangSample(index, label, button) {
-            const sample = LANG_SAMPLES[index];
-            const text = label === '中文' ? sample.zh : label === 'English' ? sample.en : sample.de;
-            copyText(text, button);
-        }
-
-        function renderLocaleFormats() {
-            const source = localeFollowNow ? new Date() : new Date(document.getElementById('localeTimeInput').value);
-            const date = isNaN(source.getTime()) ? new Date() : source;
-            if (localeFollowNow) document.getElementById('localeTimeInput').value = toDatetimeLocalValue(date);
+        function renderLocaleFormats(date) {
+            date = date || currentZoneDate();
             const y = date.getFullYear();
             const m = pad2(date.getMonth() + 1);
             const d = pad2(date.getDate());
@@ -3608,34 +3593,20 @@
             document.getElementById('localeGrid').dataset.copyText = formats.map(item => item.name + '：' + item.value).join('\n');
         }
 
-        function useCurrentLocaleTime() {
-            localeFollowNow = true;
-            renderLocaleFormats();
-        }
-
         function copyLocaleFormats(button) {
             copyText(document.getElementById('localeGrid').dataset.copyText || '', button);
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             const zoneInput = document.getElementById('zoneTimeInput');
-            const localeInput = document.getElementById('localeTimeInput');
             zoneInput.value = toDatetimeLocalValue(new Date());
-            localeInput.value = toDatetimeLocalValue(new Date());
             zoneInput.addEventListener('input', function() {
                 zoneFollowNow = false;
                 renderZones();
             });
-            localeInput.addEventListener('input', function() {
-                localeFollowNow = false;
-                renderLocaleFormats();
-            });
-            renderLangSamples();
             renderZones();
-            renderLocaleFormats();
             setInterval(function() {
                 if (zoneFollowNow) renderZones();
-                if (localeFollowNow) renderLocaleFormats();
             }, 1000);
         });
 
@@ -3643,7 +3614,7 @@
         window.addEventListener('scroll', function() {
             clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(function() {
-                const sections = ['converter-section', 'barcode-section', 'random-text-section', 'unicode-section', 'json-section', 'textdiff-section', 'codec-section', 'jwt-section', 'zone-section', 'lang-section', 'locale-section'];
+                const sections = ['converter-section', 'barcode-section', 'random-text-section', 'unicode-section', 'json-section', 'textdiff-section', 'codec-section', 'jwt-section'];
                 const menuItems = document.querySelectorAll('.menu-item');
 
                 let currentSection = '';
