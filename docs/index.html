@@ -11,6 +11,7 @@
     <!-- 条形码和二维码库（本地文件，不依赖 CDN，异步加载不阻塞页面） -->
     <script src="jsbarcode.min.js" defer></script>
     <script src="qrcode.min.js" defer></script>
+    <script src="testing-assets.js?v=20261103-1" defer></script>
     <style>
         * {
             margin: 0;
@@ -1687,6 +1688,7 @@
         }
 
     </style>
+    <link rel="stylesheet" href="testing-assets.css?v=20261103-1">
 </head>
 <body>
     <!-- 认证对话框 -->
@@ -1740,12 +1742,20 @@
             <span>🎫</span>
             <span>JWT解码</span>
         </div>
+        <div class="menu-item" onclick="scrollToSection('image-asset-section')">
+            <span>🖼️</span>
+            <span>测试图片生成</span>
+        </div>
+        <div class="menu-item" onclick="scrollToSection('file-asset-section')">
+            <span>📁</span>
+            <span>指定大小文件</span>
+        </div>
     </div>
 
     <div class="container">
         <div class="header">
             <h1><img src="cat.png" alt="猫咪图标" style="width: 32px; height: 32px; vertical-align: middle; margin-right: 8px; background: transparent; mix-blend-mode: multiply;"> 小天才工具包</h1>
-            <p>时间工具、随机文字、条形码/二维码、JSON、文本对比、编码转换、JWT 解码、测试数据、Unicode</p>
+            <p>时间工具、随机文字、条形码/二维码、JSON、文本对比、编码转换、JWT 解码、测试数据、Unicode、测试图片、指定大小文件</p>
         </div>
 
         <div class="content">
@@ -2028,6 +2038,69 @@
                     <textarea id="jwtOutput" class="tool-textarea" readonly placeholder="Header 和 Payload 会显示在这里"></textarea>
                 </div>
                 <div id="jwtStatus" class="unicode-status"></div>
+            </div>
+
+            <div class="tool-section asset-section" id="image-asset-section">
+                <div class="tool-title">🖼️ 测试图片生成</div>
+                <p class="asset-help">生成商品图、透明图、长图和尺寸边界样本。全部在本地浏览器生成。宽高可精确控制，文件体积以生成后的实际字节数为准。</p>
+                <div class="asset-form">
+                    <label class="asset-field" for="assetImageWidth">宽度（px）<input id="assetImageWidth" type="number" min="1" max="8192" step="1" value="800"></label>
+                    <label class="asset-field" for="assetImageHeight">高度（px）<input id="assetImageHeight" type="number" min="1" max="8192" step="1" value="800"></label>
+                    <label class="asset-field" for="assetImageCount">生成数量（1～20）<input id="assetImageCount" type="number" min="1" max="20" step="1" value="1"></label>
+                    <label class="asset-field" for="assetImageFormat">图片格式<select id="assetImageFormat"><option value="png">PNG（支持透明）</option><option value="jpeg">JPEG</option><option value="webp">WebP（需浏览器支持）</option></select></label>
+                    <label class="asset-field" for="assetImageBackground">背景<select id="assetImageBackground"><option value="gradient">渐变</option><option value="solid">纯色</option><option value="transparent">透明</option><option value="noise">随机噪点（较大体积）</option></select></label>
+                    <label class="asset-field" for="assetImageColor">背景主色<input id="assetImageColor" type="color" value="#93c5fd"></label>
+                    <label class="asset-field" for="assetImageQuality">JPEG / WebP 质量（1～100）<input id="assetImageQuality" type="number" min="1" max="100" step="1" value="90"></label>
+                    <label class="asset-field" for="assetImageName">文件名前缀<input id="assetImageName" type="text" maxlength="60" value="test-image"></label>
+                    <label class="asset-field" for="assetImageText">图片标记文字<input id="assetImageText" type="text" maxlength="80" placeholder="例如：商品主图 / QA 上传测试"></label>
+                </div>
+                <label class="asset-check"><input id="assetImageLabel" type="checkbox" checked>显示标记文字、尺寸和编号（需要全透明图片时取消）</label>
+                <div class="asset-presets" aria-label="图片尺寸预设">
+                    <button type="button" data-image-preset="799x799">799 × 799</button>
+                    <button type="button" data-image-preset="800x800">800 × 800</button>
+                    <button type="button" data-image-preset="801x801">801 × 801</button>
+                    <button type="button" data-image-preset="750x3000">长图 750 × 3000</button>
+                    <button type="button" data-image-preset="3000x750">宽图 3000 × 750</button>
+                    <button type="button" data-image-preset="1x1">极小图 1 × 1</button>
+                </div>
+                <p class="asset-help">单边最大 8192 px，单张最多 16,777,216 像素。PNG 不受质量参数影响；JPEG 不支持透明。下载 ZIP 可一次保存本批全部图片。</p>
+                <div class="tool-actions">
+                    <button type="button" id="imageAssetGenerate">生成图片</button>
+                    <button type="button" id="imageAssetZip" hidden>打包下载 ZIP</button>
+                    <button type="button" id="imageAssetClear" class="secondary">清空结果</button>
+                </div>
+                <div id="imageAssetStatus" class="asset-status" role="status" aria-live="polite">设置参数后生成，结果可预览并下载。</div>
+                <div id="imageAssetResults" class="asset-results"></div>
+            </div>
+
+            <div class="tool-section asset-section file-asset-section" id="file-asset-section">
+                <div class="tool-title">📁 指定大小文件生成</div>
+                <p class="asset-help">生成精确到字节的文件，验证上传大小限制。选择“生成边界三件套”，可获得上限 − 1、上限、上限 + 1 字节三个样本。文件在浏览器本地生成。</p>
+                <div class="asset-form">
+                    <label class="asset-field" for="assetFileSize">目标大小 / 上传上限<input id="assetFileSize" type="number" min="0" step="any" value="5"></label>
+                    <label class="asset-field" for="assetFileUnit">大小单位<select id="assetFileUnit"><option value="B">B（字节）</option><option value="KB">KB（1000 B）</option><option value="KiB">KiB（1024 B）</option><option value="MB">MB（1,000,000 B）</option><option value="MiB" selected>MiB（1,048,576 B）</option></select></label>
+                    <label class="asset-field" for="assetFileType">文件类型<select id="assetFileType"><option value="txt">TXT（有效纯文本）</option><option value="bin">BIN（二进制测试样本）</option></select></label>
+                    <label class="asset-field" for="assetFileContent">BIN 填充内容<select id="assetFileContent"><option value="zero">全零字节</option><option value="random">随机字节</option></select></label>
+                    <label class="asset-field" for="assetFileName">文件名前缀<input id="assetFileName" type="text" maxlength="60" value="test-file"></label>
+                </div>
+                <div class="asset-presets" aria-label="文件大小预设">
+                    <button type="button" data-file-preset="0" data-file-unit="B">空文件 0 B</button>
+                    <button type="button" data-file-preset="1" data-file-unit="KiB">1 KiB</button>
+                    <button type="button" data-file-preset="1">1 MiB</button>
+                    <button type="button" data-file-preset="5">5 MiB</button>
+                    <button type="button" data-file-preset="10">10 MiB</button>
+                    <button type="button" data-file-preset="20">20 MiB</button>
+                </div>
+                <div id="assetByteCount" class="asset-meta" aria-live="polite"></div>
+                <p class="asset-help">单个文件最多 100 MiB，每批合计最多 150 MiB。TXT 使用可读 ASCII 内容，不添加 BOM，以保持准确大小。BIN 用于大小校验；不冒充 PDF、Excel 等格式。</p>
+                <div class="tool-actions">
+                    <button type="button" id="fileAssetGenerate">生成指定大小文件</button>
+                    <button type="button" id="fileAssetBoundary">生成边界三件套</button>
+                    <button type="button" id="fileAssetZip" hidden>打包下载 ZIP</button>
+                    <button type="button" id="fileAssetClear" class="secondary">清空结果</button>
+                </div>
+                <div id="fileAssetStatus" class="asset-status" role="status" aria-live="polite">支持精确大小、空文件和上传上限边界测试。</div>
+                <div id="fileAssetResults" class="asset-results"></div>
             </div>
 
         </div>
@@ -3614,7 +3687,7 @@
         window.addEventListener('scroll', function() {
             clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(function() {
-                const sections = ['converter-section', 'barcode-section', 'random-text-section', 'unicode-section', 'json-section', 'textdiff-section', 'codec-section', 'jwt-section'];
+                const sections = ['converter-section', 'barcode-section', 'random-text-section', 'unicode-section', 'json-section', 'textdiff-section', 'codec-section', 'jwt-section', 'image-asset-section', 'file-asset-section'];
                 const menuItems = document.querySelectorAll('.menu-item');
 
                 let currentSection = '';
