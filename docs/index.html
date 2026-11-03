@@ -1541,6 +1541,40 @@
             background: #c8e6c9;
         }
 
+        .copy-toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-16px);
+            min-width: 220px;
+            padding: 14px 22px;
+            border-radius: 10px;
+            background: #1b5e20;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+            z-index: 10000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .copy-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .copy-toast.error {
+            background: #b71c1c;
+        }
+
+        button.is-copied {
+            background: #2e7d32 !important;
+            color: #fff !important;
+        }
+
         .diff-arrow {
             color: #888;
             padding: 0 2px;
@@ -1641,7 +1675,7 @@
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <label style="color: #888; font-size: 12px;">当前时间戳</label>
                             <span id="currentTimestamp" style="color: #333; font-weight: bold; font-family: 'Consolas', monospace;">-</span>
-                            <button class="btn-copy-timestamp" onclick="copyCurrentTimestamp()">📋</button>
+                            <button class="btn-copy-timestamp" onclick="copyCurrentTimestamp(this)">📋</button>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <label style="color: #888; font-size: 12px;">可读时间</label>
@@ -1672,7 +1706,7 @@
                         <button class="btn-convert" onclick="convertDateToTimestamp()">转换为时间戳</button>
                         <div class="converter-result" id="dateResult">等待转换...</div>
                         <div style="text-align: center;">
-                            <button class="btn-copy-converter" id="copyDateResult" onclick="copyConverterResult('dateResult')" style="display: none;">
+                            <button class="btn-copy-converter" id="copyDateResult" onclick="copyConverterResult('dateResult', this)" style="display: none;">
                                 <span>📋</span>
                                 <span>复制时间戳</span>
                             </button>
@@ -1778,8 +1812,8 @@
                 <div class="random-text-output" id="randomTextOutput">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <label style="font-size: 13px; font-weight: 600; color: #333;">生成结果</label>
-                        <button onclick="copyRandomText()" style="padding: 5px 10px; background: #4caf50; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2); white-space: nowrap; max-width: 200px;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px rgba(76, 175, 80, 0.3)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 4px rgba(76, 175, 80, 0.2)'">
-                            📋 复制结果
+                        <button type="button" onclick="copyRandomText(this)" style="padding: 5px 10px; background: #4caf50; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+                            复制结果
                         </button>
                     </div>
                     <textarea id="randomTextResult" class="random-text-result" readonly placeholder="点击生成按钮开始..."></textarea>
@@ -1797,6 +1831,7 @@
                         <div class="unicode-label">中文 → Unicode</div>
                         <textarea id="chineseInput" class="unicode-textarea" placeholder="输入中文文本，例如：你好世界"></textarea>
                         <button class="btn-unicode-convert" onclick="convertChineseToUnicode()">转换为Unicode</button>
+                        <button type="button" class="secondary" style="width:100%; margin-top:8px;" onclick="copyToolText('unicodeOutput', this)">复制结果</button>
                         <textarea id="unicodeOutput" class="unicode-textarea" placeholder="Unicode编码结果" readonly></textarea>
                     </div>
 
@@ -1805,6 +1840,7 @@
                         <div class="unicode-label">Unicode → 中文</div>
                         <textarea id="unicodeInput" class="unicode-textarea" placeholder="输入Unicode编码，例如：\u4f60\u597d\u4e16\u754c"></textarea>
                         <button class="btn-unicode-convert" onclick="convertUnicodeToChinese()">转换为中文</button>
+                        <button type="button" class="secondary" style="width:100%; margin-top:8px;" onclick="copyToolText('chineseOutput', this)">复制结果</button>
                         <textarea id="chineseOutput" class="unicode-textarea" placeholder="中文结果" readonly></textarea>
                     </div>
                 </div>
@@ -1820,7 +1856,7 @@
                         <div class="tool-actions">
                             <button type="button" onclick="formatJsonSide('A')">格式化</button>
                             <button type="button" onclick="compressJsonSide('A')">压缩</button>
-                            <button type="button" class="secondary" onclick="copyToolText('jsonInputA')">复制</button>
+                            <button type="button" class="secondary" onclick="copyToolText('jsonInputA', this)">复制结果</button>
                         </div>
                     </div>
                     <div class="tool-panel">
@@ -1829,7 +1865,7 @@
                         <div class="tool-actions">
                             <button type="button" onclick="formatJsonSide('B')">格式化</button>
                             <button type="button" onclick="compressJsonSide('B')">压缩</button>
-                            <button type="button" class="secondary" onclick="copyToolText('jsonInputB')">复制</button>
+                            <button type="button" class="secondary" onclick="copyToolText('jsonInputB', this)">复制结果</button>
                         </div>
                     </div>
                 </div>
@@ -1854,6 +1890,7 @@
                 </div>
                 <div class="tool-actions">
                     <button type="button" onclick="comparePlainText()">开始对比</button>
+                    <button type="button" class="secondary" onclick="copyDiffResult(this)">复制结果</button>
                 </div>
                 <div id="textDiffView" class="diff-view">相同内容保持原样。红色是左侧多出的，绿色是右侧多出的。</div>
                 <div id="textDiffStatus" class="unicode-status"></div>
@@ -1869,7 +1906,7 @@
                         <button type="button" onclick="convertCodec('urlencode')">URL 编码</button>
                         <button type="button" onclick="convertCodec('urldecode')">URL 解码</button>
                         <button type="button" onclick="convertCodec('md5')">MD5</button>
-                        <button type="button" class="secondary" onclick="copyToolText('codecOutput')">复制结果</button>
+                        <button type="button" class="secondary" onclick="copyToolText('codecOutput', this)">复制结果</button>
                     </div>
                     <textarea id="codecOutput" class="tool-textarea" readonly placeholder="转换结果"></textarea>
                 </div>
@@ -1882,7 +1919,7 @@
                     <textarea id="jwtInput" class="tool-textarea" placeholder="粘贴 JWT，只解码内容，不校验签名"></textarea>
                     <div class="tool-actions">
                         <button type="button" onclick="decodeJwt()">解码</button>
-                        <button type="button" class="secondary" onclick="copyToolText('jwtOutput')">复制结果</button>
+                        <button type="button" class="secondary" onclick="copyToolText('jwtOutput', this)">复制结果</button>
                     </div>
                     <textarea id="jwtOutput" class="tool-textarea" readonly placeholder="Header 和 Payload 会显示在这里"></textarea>
                 </div>
@@ -2180,59 +2217,12 @@
             }
         }
 
-        // 复制当前时间戳
-        function copyCurrentTimestamp() {
-            const timestamp = document.getElementById('currentTimestamp').textContent;
-
-            if (!timestamp || timestamp === '-') {
-                showConverterStatus('❌ 时间戳未准备好', false);
-                return;
-            }
-
-            // 创建临时textarea用于复制
-            const tempTextarea = document.createElement('textarea');
-            tempTextarea.value = timestamp;
-            tempTextarea.style.position = 'fixed';
-            tempTextarea.style.left = '-9999px';
-            document.body.appendChild(tempTextarea);
-            tempTextarea.select();
-
-            try {
-                document.execCommand('copy');
-                showConverterStatus('✅ 当前时间戳已复制到剪贴板！', true);
-            } catch (error) {
-                showConverterStatus('❌ 复制失败', false);
-            }
-
-            document.body.removeChild(tempTextarea);
+        function copyCurrentTimestamp(button) {
+            copyText(document.getElementById('currentTimestamp').textContent, button);
         }
 
-        // 复制转换器结果
-        function copyConverterResult(resultDivId) {
-            const resultDiv = document.getElementById(resultDivId);
-            const timestamp = resultDiv.dataset.timestamp;
-
-            if (!timestamp) {
-                showConverterStatus('❌ 没有可复制的时间戳', false);
-                return;
-            }
-
-            // 创建临时textarea用于复制
-            const tempTextarea = document.createElement('textarea');
-            tempTextarea.value = timestamp;
-            tempTextarea.style.position = 'fixed';
-            tempTextarea.style.left = '-9999px';
-            document.body.appendChild(tempTextarea);
-            tempTextarea.select();
-
-            try {
-                document.execCommand('copy');
-                showConverterStatus('✅ 时间戳已复制到剪贴板！', true);
-            } catch (error) {
-                showConverterStatus('❌ 复制失败', false);
-            }
-
-            document.body.removeChild(tempTextarea);
+        function copyConverterResult(resultDivId, button) {
+            copyText(document.getElementById(resultDivId).dataset.timestamp || '', button);
         }
 
         // 支持Enter键快捷转换
@@ -2868,31 +2858,8 @@
             showRandomTextStatus('✅ 随机文字生成成功！', true);
         }
 
-        // 复制随机文字结果
-        function copyRandomText() {
-            const result = document.getElementById('randomTextResult').value;
-
-            if (!result) {
-                showRandomTextStatus('❌ 没有可复制的内容', false);
-                return;
-            }
-
-            // 创建临时textarea用于复制
-            const tempTextarea = document.createElement('textarea');
-            tempTextarea.value = result;
-            tempTextarea.style.position = 'fixed';
-            tempTextarea.style.left = '-9999px';
-            document.body.appendChild(tempTextarea);
-            tempTextarea.select();
-
-            try {
-                document.execCommand('copy');
-                showRandomTextStatus('✅ 随机文字已复制到剪贴板！', true);
-            } catch (error) {
-                showRandomTextStatus('❌ 复制失败', false);
-            }
-
-            document.body.removeChild(tempTextarea);
+        function copyRandomText(button) {
+            copyText(document.getElementById('randomTextResult').value, button);
         }
 
         function showPanelStatus(elementId, message, isSuccess) {
@@ -2902,19 +2869,74 @@
             setTimeout(() => statusDiv.classList.remove('show'), 3000);
         }
 
-        function copyToolText(elementId) {
-            const value = document.getElementById(elementId).value;
-            if (!value) {
+        function copyToolText(elementId, button) {
+            const element = document.getElementById(elementId);
+            const value = element.tagName === 'TEXTAREA' || element.tagName === 'INPUT' ? element.value : element.innerText;
+            copyText(value, button);
+        }
+
+        function copyDiffResult(button) {
+            const view = document.getElementById('textDiffView');
+            if (view.dataset.ready !== '1') {
+                showCopyToast('请先完成对比', false, button);
                 return;
             }
+            copyText(view.innerText, button);
+        }
+
+        function copyText(text, button) {
+            const value = text == null ? '' : String(text).trim();
+            if (!value || value === '-' || value === '等待转换...') {
+                showCopyToast('没有可复制的内容', false, button);
+                return;
+            }
+            const finish = (ok) => showCopyToast(ok ? '已复制到剪贴板' : '复制失败', ok, button);
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(String(text)).then(() => finish(true)).catch(() => finish(copyWithTextarea(text)));
+                return;
+            }
+            finish(copyWithTextarea(text));
+        }
+
+        function copyWithTextarea(text) {
             const tempTextarea = document.createElement('textarea');
-            tempTextarea.value = value;
+            tempTextarea.value = text;
             tempTextarea.style.position = 'fixed';
             tempTextarea.style.left = '-9999px';
             document.body.appendChild(tempTextarea);
             tempTextarea.select();
-            document.execCommand('copy');
+            let ok = false;
+            try {
+                ok = document.execCommand('copy');
+            } catch (error) {
+                ok = false;
+            }
             document.body.removeChild(tempTextarea);
+            return ok;
+        }
+
+        let copyToastTimer = null;
+        function showCopyToast(message, ok, button) {
+            let toast = document.getElementById('copyToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'copyToast';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = (ok ? '✅ ' : '❌ ') + message;
+            toast.className = 'copy-toast show' + (ok ? '' : ' error');
+            clearTimeout(copyToastTimer);
+            copyToastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+
+            if (!button) return;
+            if (!button.dataset.copyLabel) button.dataset.copyLabel = button.innerHTML;
+            button.classList.add('is-copied');
+            button.textContent = ok ? '已复制' : '复制失败';
+            clearTimeout(button._copyTimer);
+            button._copyTimer = setTimeout(() => {
+                button.innerHTML = button.dataset.copyLabel;
+                button.classList.remove('is-copied');
+            }, 1800);
         }
 
         function escapeHtml(text) {
@@ -3207,6 +3229,7 @@
             document.getElementById('textDiffLeft').innerHTML = leftChunks.join('\n');
             document.getElementById('textDiffRight').innerHTML = rightChunks.join('\n');
             view.innerHTML = changes ? rows.join('') : '两段文本一致。';
+            view.dataset.ready = '1';
             showPanelStatus('textDiffStatus', changes ? '✅ 有 ' + changes + ' 处差异' : '✅ 文本一致', true);
         }
 
