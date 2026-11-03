@@ -40,6 +40,8 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             padding: 20px;
             height: fit-content;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
             position: fixed;
             top: 20px;
             left: 20px;
@@ -1421,6 +1423,114 @@
             transform: translateX(24px);
         }
 
+        .tool-section {
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 2px dashed;
+        }
+
+        .tool-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .tool-panel {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .tool-textarea {
+            width: 100%;
+            min-height: 140px;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: Consolas, monospace;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .tool-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .tool-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .tool-actions button,
+        .btn-sample {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background: #667eea;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .tool-actions button.secondary,
+        .btn-sample.secondary {
+            background: #78909c;
+        }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .diff-view {
+            margin-top: 12px;
+            max-height: 360px;
+            overflow: auto;
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-family: Consolas, monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .diff-del { background: #ffebee; color: #c62828; }
+        .diff-add { background: #e8f5e9; color: #2e7d32; }
+        .diff-change { background: #fff8e1; color: #ef6c00; }
+
+        .sample-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .json-section { background: #e8f5e9; border-color: #43a047; }
+        .json-section .tool-title { color: #2e7d32; }
+        .diff-section { background: #e3f2fd; border-color: #1e88e5; }
+        .diff-section .tool-title { color: #1565c0; }
+        .codec-section { background: #f3e5f5; border-color: #8e24aa; }
+        .codec-section .tool-title { color: #6a1b9a; }
+        .jwt-section { background: #fff8e1; border-color: #f9a825; }
+        .jwt-section .tool-title { color: #f57f17; }
+
+        @media (max-width: 768px) {
+            .tool-grid { grid-template-columns: 1fr; }
+        }
+
     </style>
 </head>
 <body>
@@ -1459,12 +1569,28 @@
             <span>🔤</span>
             <span>Unicode转换</span>
         </div>
+        <div class="menu-item" onclick="scrollToSection('json-section')">
+            <span>{}</span>
+            <span>JSON工具</span>
+        </div>
+        <div class="menu-item" onclick="scrollToSection('textdiff-section')">
+            <span>📝</span>
+            <span>文本对比</span>
+        </div>
+        <div class="menu-item" onclick="scrollToSection('codec-section')">
+            <span>🔐</span>
+            <span>编码转换</span>
+        </div>
+        <div class="menu-item" onclick="scrollToSection('jwt-section')">
+            <span>🎫</span>
+            <span>JWT解码</span>
+        </div>
     </div>
 
     <div class="container">
         <div class="header">
             <h1><img src="cat.png" alt="猫咪图标" style="width: 32px; height: 32px; vertical-align: middle; margin-right: 8px; background: transparent; mix-blend-mode: multiply;"> 小天才工具包</h1>
-            <p>时间转换、条形码/二维码生成、随机文字生成、Unicode转换</p>
+            <p>时间转换、条形码/二维码、JSON、文本对比、编码转换、JWT 解码、测试数据、Unicode</p>
         </div>
 
         <div class="content">
@@ -1597,6 +1723,19 @@
                         </div>
                         <button class="btn-generate-text" onclick="generateRandomText()">🎲 生成随机文字</button>
                     </div>
+                    <div class="sample-row">
+                        <label style="font-size: 13px; color: #555; font-weight: 600;">测试数据：</label>
+                        <button type="button" class="btn-sample" onclick="generateSample('phone')">手机号</button>
+                        <button type="button" class="btn-sample" onclick="generateSample('email')">邮箱</button>
+                        <button type="button" class="btn-sample" onclick="generateSample('idcard')">身份证号</button>
+                        <button type="button" class="btn-sample" onclick="generateSample('uuid')">UUID</button>
+                        <label style="font-size: 13px; color: #555; font-weight: 600;">边界长度：</label>
+                        <button type="button" class="btn-sample secondary" onclick="generateBoundary(1)">1</button>
+                        <button type="button" class="btn-sample secondary" onclick="generateBoundary(255)">255</button>
+                        <button type="button" class="btn-sample secondary" onclick="generateBoundary(256)">256</button>
+                        <button type="button" class="btn-sample secondary" onclick="generateBoundary(1024)">1024</button>
+                        <button type="button" class="btn-sample secondary" onclick="generateBoundary(2000)">2000</button>
+                    </div>
                 </div>
 
                 <div class="random-text-output" id="randomTextOutput">
@@ -1633,6 +1772,84 @@
                     </div>
                 </div>
                 <div id="unicodeStatus" class="unicode-status"></div>
+            </div>
+
+            <div class="tool-section json-section" id="json-section">
+                <div class="tool-title">{} JSON 格式化与对比</div>
+                <div class="tool-grid">
+                    <div class="tool-panel">
+                        <div class="unicode-label">JSON A</div>
+                        <textarea id="jsonInputA" class="tool-textarea" placeholder='粘贴 JSON，例如 {"code":0,"data":{"id":1}}'></textarea>
+                        <div class="tool-actions">
+                            <button type="button" onclick="formatJsonSide('A')">格式化</button>
+                            <button type="button" onclick="compressJsonSide('A')">压缩</button>
+                            <button type="button" class="secondary" onclick="copyToolText('jsonInputA')">复制</button>
+                        </div>
+                    </div>
+                    <div class="tool-panel">
+                        <div class="unicode-label">JSON B</div>
+                        <textarea id="jsonInputB" class="tool-textarea" placeholder="粘贴另一份 JSON，用于对比"></textarea>
+                        <div class="tool-actions">
+                            <button type="button" onclick="formatJsonSide('B')">格式化</button>
+                            <button type="button" onclick="compressJsonSide('B')">压缩</button>
+                            <button type="button" class="secondary" onclick="copyToolText('jsonInputB')">复制</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="tool-actions">
+                    <button type="button" onclick="compareJson()">对比 A / B</button>
+                </div>
+                <div id="jsonDiffView" class="diff-view">格式化结果或字段差异会显示在这里。</div>
+                <div id="jsonStatus" class="unicode-status"></div>
+            </div>
+
+            <div class="tool-section diff-section" id="textdiff-section">
+                <div class="tool-title">📝 文本对比</div>
+                <div class="tool-grid">
+                    <div class="tool-panel">
+                        <div class="unicode-label">左侧文本</div>
+                        <textarea id="textDiffLeft" class="tool-textarea" placeholder="粘贴第一段文本或日志"></textarea>
+                    </div>
+                    <div class="tool-panel">
+                        <div class="unicode-label">右侧文本</div>
+                        <textarea id="textDiffRight" class="tool-textarea" placeholder="粘贴第二段文本或日志"></textarea>
+                    </div>
+                </div>
+                <div class="tool-actions">
+                    <button type="button" onclick="comparePlainText()">开始对比</button>
+                </div>
+                <div id="textDiffView" class="diff-view">红色是左侧独有，绿色是右侧独有。</div>
+                <div id="textDiffStatus" class="unicode-status"></div>
+            </div>
+
+            <div class="tool-section codec-section" id="codec-section">
+                <div class="tool-title">🔐 编码转换</div>
+                <div class="tool-panel">
+                    <textarea id="codecInput" class="tool-textarea" placeholder="输入要转换的文本"></textarea>
+                    <div class="tool-actions">
+                        <button type="button" onclick="convertCodec('base64encode')">Base64 编码</button>
+                        <button type="button" onclick="convertCodec('base64decode')">Base64 解码</button>
+                        <button type="button" onclick="convertCodec('urlencode')">URL 编码</button>
+                        <button type="button" onclick="convertCodec('urldecode')">URL 解码</button>
+                        <button type="button" onclick="convertCodec('md5')">MD5</button>
+                        <button type="button" class="secondary" onclick="copyToolText('codecOutput')">复制结果</button>
+                    </div>
+                    <textarea id="codecOutput" class="tool-textarea" readonly placeholder="转换结果"></textarea>
+                </div>
+                <div id="codecStatus" class="unicode-status"></div>
+            </div>
+
+            <div class="tool-section jwt-section" id="jwt-section">
+                <div class="tool-title">🎫 JWT 解码</div>
+                <div class="tool-panel">
+                    <textarea id="jwtInput" class="tool-textarea" placeholder="粘贴 JWT，只解码内容，不校验签名"></textarea>
+                    <div class="tool-actions">
+                        <button type="button" onclick="decodeJwt()">解码</button>
+                        <button type="button" class="secondary" onclick="copyToolText('jwtOutput')">复制结果</button>
+                    </div>
+                    <textarea id="jwtOutput" class="tool-textarea" readonly placeholder="Header 和 Payload 会显示在这里"></textarea>
+                </div>
+                <div id="jwtStatus" class="unicode-status"></div>
             </div>
 
         </div>
@@ -2641,11 +2858,383 @@
             document.body.removeChild(tempTextarea);
         }
 
+        function showPanelStatus(elementId, message, isSuccess) {
+            const statusDiv = document.getElementById(elementId);
+            statusDiv.textContent = message;
+            statusDiv.className = 'unicode-status ' + (isSuccess ? 'success' : 'error') + ' show';
+            setTimeout(() => statusDiv.classList.remove('show'), 3000);
+        }
+
+        function copyToolText(elementId) {
+            const value = document.getElementById(elementId).value;
+            if (!value) {
+                return;
+            }
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = value;
+            tempTextarea.style.position = 'fixed';
+            tempTextarea.style.left = '-9999px';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextarea);
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function randomInt(min, max) {
+            const range = max - min + 1;
+            const values = new Uint32Array(1);
+            crypto.getRandomValues(values);
+            return min + (values[0] % range);
+        }
+
+        function randomDigits(count) {
+            let text = '';
+            for (let i = 0; i < count; i++) text += randomInt(0, 9);
+            return text;
+        }
+
+        function showGeneratedSamples(title, lines) {
+            const output = document.getElementById('randomTextResult');
+            output.value = lines.join('\n');
+            document.getElementById('randomTextOutput').classList.add('show');
+            const info = document.getElementById('randomTextInfo');
+            info.innerHTML = '✅ ' + title + '，共 ' + lines.length + ' 条。身份证号、手机号仅用于测试数据。';
+            info.classList.add('show');
+            showRandomTextStatus('✅ 测试数据已生成', true);
+        }
+
+        function generateSample(kind) {
+            const lines = [];
+            for (let i = 0; i < 5; i++) {
+                if (kind === 'phone') lines.push(generatePhone());
+                else if (kind === 'email') lines.push(generateEmail());
+                else if (kind === 'idcard') lines.push(generateIdCard());
+                else lines.push(crypto.randomUUID());
+            }
+            const titles = { phone: '手机号', email: '邮箱', idcard: '身份证号', uuid: 'UUID' };
+            showGeneratedSamples(titles[kind] || '测试数据', lines);
+        }
+
+        function generatePhone() {
+            const second = randomInt(3, 9);
+            return '1' + second + randomDigits(9);
+        }
+
+        function generateEmail() {
+            const names = ['tester', 'qa', 'user', 'demo', 'guest'];
+            return names[randomInt(0, names.length - 1)] + randomInt(1000, 9999) + '@example.com';
+        }
+
+        function generateIdCard() {
+            const areas = ['110101', '110105', '310101', '310115', '440106', '440305', '330106', '320102', '510104', '420106'];
+            const area = areas[randomInt(0, areas.length - 1)];
+            const year = randomInt(1975, 2004);
+            const month = randomInt(1, 12);
+            const day = randomInt(1, new Date(year, month, 0).getDate());
+            const body = area
+                + String(year)
+                + String(month).padStart(2, '0')
+                + String(day).padStart(2, '0')
+                + String(randomInt(1, 999)).padStart(3, '0');
+            const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+            const codes = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+            let sum = 0;
+            for (let i = 0; i < 17; i++) sum += Number(body[i]) * weights[i];
+            return body + codes[sum % 11];
+        }
+
+        function generateBoundary(length) {
+            document.getElementById('textLength').value = length;
+            generateRandomText();
+        }
+
+        function readJsonSide(side) {
+            const element = document.getElementById(side === 'A' ? 'jsonInputA' : 'jsonInputB');
+            const text = element.value.trim();
+            if (!text) throw new Error('请先输入 JSON ' + side);
+            return { element: element, data: JSON.parse(text) };
+        }
+
+        function formatJsonSide(side) {
+            try {
+                const parsed = readJsonSide(side);
+                parsed.element.value = JSON.stringify(parsed.data, null, 2);
+                showPanelStatus('jsonStatus', '✅ JSON ' + side + ' 已格式化', true);
+            } catch (error) {
+                showPanelStatus('jsonStatus', '❌ JSON ' + side + ' 格式错误：' + error.message, false);
+            }
+        }
+
+        function compressJsonSide(side) {
+            try {
+                const parsed = readJsonSide(side);
+                parsed.element.value = JSON.stringify(parsed.data);
+                showPanelStatus('jsonStatus', '✅ JSON ' + side + ' 已压缩', true);
+            } catch (error) {
+                showPanelStatus('jsonStatus', '❌ JSON ' + side + ' 格式错误：' + error.message, false);
+            }
+        }
+
+        function flattenJson(value, path, out) {
+            if (Array.isArray(value)) {
+                if (value.length === 0) out[path || '$'] = '[]';
+                value.forEach((item, index) => flattenJson(item, path + '[' + index + ']', out));
+                return;
+            }
+            if (value && typeof value === 'object') {
+                const keys = Object.keys(value);
+                if (keys.length === 0) out[path || '$'] = '{}';
+                keys.forEach(key => flattenJson(value[key], path ? path + '.' + key : key, out));
+                return;
+            }
+            out[path || '$'] = value === null ? 'null' : String(value);
+        }
+
+        function compareJson() {
+            const view = document.getElementById('jsonDiffView');
+            try {
+                const left = JSON.parse(document.getElementById('jsonInputA').value.trim() || 'null');
+                const right = JSON.parse(document.getElementById('jsonInputB').value.trim() || 'null');
+                const leftMap = {};
+                const rightMap = {};
+                flattenJson(left, '', leftMap);
+                flattenJson(right, '', rightMap);
+                const keys = Array.from(new Set(Object.keys(leftMap).concat(Object.keys(rightMap)))).sort();
+                const rows = [];
+                keys.forEach(key => {
+                    const inLeft = Object.prototype.hasOwnProperty.call(leftMap, key);
+                    const inRight = Object.prototype.hasOwnProperty.call(rightMap, key);
+                    if (inLeft && inRight && leftMap[key] === rightMap[key]) return;
+                    let kind = 'diff-change';
+                    let text = key + '\n  A: ' + (inLeft ? leftMap[key] : '（无）') + '\n  B: ' + (inRight ? rightMap[key] : '（无）');
+                    if (!inRight) kind = 'diff-del';
+                    if (!inLeft) kind = 'diff-add';
+                    rows.push('<div class="' + kind + '">' + escapeHtml(text) + '</div>');
+                });
+                if (!rows.length) {
+                    view.innerHTML = '两份 JSON 的字段值一致。';
+                    showPanelStatus('jsonStatus', '✅ 对比完成，内容一致', true);
+                    return;
+                }
+                const limited = rows.slice(0, 200).join('');
+                const more = rows.length > 200 ? '<div>还有 ' + (rows.length - 200) + ' 处差异未展开。</div>' : '';
+                view.innerHTML = limited + more;
+                showPanelStatus('jsonStatus', '✅ 发现 ' + rows.length + ' 处差异', true);
+            } catch (error) {
+                view.textContent = '对比失败：' + error.message;
+                showPanelStatus('jsonStatus', '❌ ' + error.message, false);
+            }
+        }
+
+        function comparePlainText() {
+            const view = document.getElementById('textDiffView');
+            const left = document.getElementById('textDiffLeft').value.split(/\r?\n/);
+            const right = document.getElementById('textDiffRight').value.split(/\r?\n/);
+            if (left.length > 2000 || right.length > 2000) {
+                view.textContent = '单侧超过 2000 行，请先截短后再对比。';
+                showPanelStatus('textDiffStatus', '❌ 文本过长', false);
+                return;
+            }
+            const n = left.length;
+            const m = right.length;
+            const dp = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+            for (let i = n - 1; i >= 0; i--) {
+                for (let j = m - 1; j >= 0; j--) {
+                    dp[i][j] = left[i] === right[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+                }
+            }
+            const rows = [];
+            let i = 0;
+            let j = 0;
+            let changes = 0;
+            while (i < n && j < m) {
+                if (left[i] === right[j]) {
+                    rows.push('<div>  ' + escapeHtml(left[i]) + '</div>');
+                    i++;
+                    j++;
+                } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+                    rows.push('<div class="diff-del">- ' + escapeHtml(left[i]) + '</div>');
+                    changes++;
+                    i++;
+                } else {
+                    rows.push('<div class="diff-add">+ ' + escapeHtml(right[j]) + '</div>');
+                    changes++;
+                    j++;
+                }
+            }
+            while (i < n) {
+                rows.push('<div class="diff-del">- ' + escapeHtml(left[i]) + '</div>');
+                changes++;
+                i++;
+            }
+            while (j < m) {
+                rows.push('<div class="diff-add">+ ' + escapeHtml(right[j]) + '</div>');
+                changes++;
+                j++;
+            }
+            view.innerHTML = changes ? rows.join('') : '两段文本一致。';
+            showPanelStatus('textDiffStatus', changes ? '✅ 有 ' + changes + ' 行差异' : '✅ 文本一致', true);
+        }
+
+        function bytesToBase64(text) {
+            const bytes = new TextEncoder().encode(text);
+            let binary = '';
+            bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+            return btoa(binary);
+        }
+
+        function base64ToText(value) {
+            const clean = value.replace(/\s/g, '');
+            const binary = atob(clean);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            return new TextDecoder().decode(bytes);
+        }
+
+        function base64UrlToText(value) {
+            let text = value.replace(/-/g, '+').replace(/_/g, '/');
+            while (text.length % 4) text += '=';
+            return base64ToText(text);
+        }
+
+        function md5(text) {
+            function add(x, y) {
+                const lsw = (x & 0xffff) + (y & 0xffff);
+                return (((x >> 16) + (y >> 16) + (lsw >> 16)) << 16) | (lsw & 0xffff);
+            }
+            function rol(num, cnt) { return (num << cnt) | (num >>> (32 - cnt)); }
+            function cmn(q, a, b, x, s, t) { return add(rol(add(add(a, q), add(x, t)), s), b); }
+            function ff(a, b, c, d, x, s, t) { return cmn((b & c) | (~b & d), a, b, x, s, t); }
+            function gg(a, b, c, d, x, s, t) { return cmn((b & d) | (c & ~d), a, b, x, s, t); }
+            function hh(a, b, c, d, x, s, t) { return cmn(b ^ c ^ d, a, b, x, s, t); }
+            function ii(a, b, c, d, x, s, t) { return cmn(c ^ (b | ~d), a, b, x, s, t); }
+            function toBlocks(input) {
+                const nblk = ((input.length + 8) >> 6) + 1;
+                const blks = new Array(nblk * 16).fill(0);
+                for (let i = 0; i < input.length; i++) blks[i >> 2] |= input[i] << ((i % 4) * 8);
+                blks[input.length >> 2] |= 0x80 << ((input.length % 4) * 8);
+                blks[nblk * 16 - 2] = input.length * 8;
+                return blks;
+            }
+            function cycle(state, k) {
+                let a = state[0], b = state[1], c = state[2], d = state[3];
+                a = ff(a, b, c, d, k[0], 7, -680876936); d = ff(d, a, b, c, k[1], 12, -389564586);
+                c = ff(c, d, a, b, k[2], 17, 606105819); b = ff(b, c, d, a, k[3], 22, -1044525330);
+                a = ff(a, b, c, d, k[4], 7, -176418897); d = ff(d, a, b, c, k[5], 12, 1200080426);
+                c = ff(c, d, a, b, k[6], 17, -1473231341); b = ff(b, c, d, a, k[7], 22, -45705983);
+                a = ff(a, b, c, d, k[8], 7, 1770035416); d = ff(d, a, b, c, k[9], 12, -1958414417);
+                c = ff(c, d, a, b, k[10], 17, -42063); b = ff(b, c, d, a, k[11], 22, -1990404162);
+                a = ff(a, b, c, d, k[12], 7, 1804603682); d = ff(d, a, b, c, k[13], 12, -40341101);
+                c = ff(c, d, a, b, k[14], 17, -1502002290); b = ff(b, c, d, a, k[15], 22, 1236535329);
+                a = gg(a, b, c, d, k[1], 5, -165796510); d = gg(d, a, b, c, k[6], 9, -1069501632);
+                c = gg(c, d, a, b, k[11], 14, 643717713); b = gg(b, c, d, a, k[0], 20, -373897302);
+                a = gg(a, b, c, d, k[5], 5, -701558691); d = gg(d, a, b, c, k[10], 9, 38016083);
+                c = gg(c, d, a, b, k[15], 14, -660478335); b = gg(b, c, d, a, k[4], 20, -405537848);
+                a = gg(a, b, c, d, k[9], 5, 568446438); d = gg(d, a, b, c, k[14], 9, -1019803690);
+                c = gg(c, d, a, b, k[3], 14, -187363961); b = gg(b, c, d, a, k[8], 20, 1163531501);
+                a = gg(a, b, c, d, k[13], 5, -1444681467); d = gg(d, a, b, c, k[2], 9, -51403784);
+                c = gg(c, d, a, b, k[7], 14, 1735328473); b = gg(b, c, d, a, k[12], 20, -1926607734);
+                a = hh(a, b, c, d, k[5], 4, -378558); d = hh(d, a, b, c, k[8], 11, -2022574463);
+                c = hh(c, d, a, b, k[11], 16, 1839030562); b = hh(b, c, d, a, k[14], 23, -35309556);
+                a = hh(a, b, c, d, k[1], 4, -1530992060); d = hh(d, a, b, c, k[4], 11, 1272893353);
+                c = hh(c, d, a, b, k[7], 16, -155497632); b = hh(b, c, d, a, k[10], 23, -1094730640);
+                a = hh(a, b, c, d, k[13], 4, 681279174); d = hh(d, a, b, c, k[0], 11, -358537222);
+                c = hh(c, d, a, b, k[3], 16, -722521979); b = hh(b, c, d, a, k[6], 23, 76029189);
+                a = hh(a, b, c, d, k[9], 4, -640364487); d = hh(d, a, b, c, k[12], 11, -421815835);
+                c = hh(c, d, a, b, k[15], 16, 530742520); b = hh(b, c, d, a, k[2], 23, -995338651);
+                a = ii(a, b, c, d, k[0], 6, -198630844); d = ii(d, a, b, c, k[7], 10, 1126891415);
+                c = ii(c, d, a, b, k[14], 15, -1416354905); b = ii(b, c, d, a, k[5], 21, -57434055);
+                a = ii(a, b, c, d, k[12], 6, 1700485571); d = ii(d, a, b, c, k[3], 10, -1894986606);
+                c = ii(c, d, a, b, k[10], 15, -1051523); b = ii(b, c, d, a, k[1], 21, -2054922799);
+                a = ii(a, b, c, d, k[8], 6, 1873313359); d = ii(d, a, b, c, k[15], 10, -30611744);
+                c = ii(c, d, a, b, k[6], 15, -1560198380); b = ii(b, c, d, a, k[13], 21, 1309151649);
+                a = ii(a, b, c, d, k[4], 6, -145523070); d = ii(d, a, b, c, k[11], 10, -1120210379);
+                c = ii(c, d, a, b, k[2], 15, 718787259); b = ii(b, c, d, a, k[9], 21, -343485551);
+                state[0] = add(a, state[0]); state[1] = add(b, state[1]);
+                state[2] = add(c, state[2]); state[3] = add(d, state[3]);
+            }
+            const bytes = Array.from(new TextEncoder().encode(text));
+            const blocks = toBlocks(bytes);
+            const state = [1732584193, -271733879, -1732584194, 271733878];
+            for (let i = 0; i < blocks.length; i += 16) cycle(state, blocks.slice(i, i + 16));
+            let hex = '';
+            for (let i = 0; i < state.length; i++) {
+                for (let shift = 0; shift < 32; shift += 8) {
+                    hex += ((state[i] >>> shift) & 0xff).toString(16).padStart(2, '0');
+                }
+            }
+            return hex;
+        }
+
+        function convertCodec(action) {
+            const input = document.getElementById('codecInput').value;
+            const output = document.getElementById('codecOutput');
+            if (!input) {
+                showPanelStatus('codecStatus', '❌ 请输入内容', false);
+                return;
+            }
+            try {
+                if (action === 'base64encode') output.value = bytesToBase64(input);
+                else if (action === 'base64decode') output.value = base64ToText(input);
+                else if (action === 'urlencode') output.value = encodeURIComponent(input);
+                else if (action === 'urldecode') output.value = decodeURIComponent(input);
+                else output.value = md5(input);
+                showPanelStatus('codecStatus', '✅ 转换完成', true);
+            } catch (error) {
+                output.value = '';
+                showPanelStatus('codecStatus', '❌ 转换失败：' + error.message, false);
+            }
+        }
+
+        function decodeJwt() {
+            const raw = document.getElementById('jwtInput').value.trim();
+            const output = document.getElementById('jwtOutput');
+            const parts = raw.split('.');
+            if (parts.length < 2) {
+                showPanelStatus('jwtStatus', '❌ 这不是完整的 JWT', false);
+                return;
+            }
+            try {
+                const header = JSON.parse(base64UrlToText(parts[0]));
+                const payload = JSON.parse(base64UrlToText(parts[1]));
+                const lines = [
+                    '仅解码，未校验签名。',
+                    '',
+                    'Header',
+                    JSON.stringify(header, null, 2),
+                    '',
+                    'Payload',
+                    JSON.stringify(payload, null, 2)
+                ];
+                if (typeof payload.exp === 'number') {
+                    const date = new Date(payload.exp * 1000);
+                    const expired = date.getTime() < Date.now();
+                    lines.push('', 'exp: ' + date.toLocaleString('zh-CN', { hour12: false }) + (expired ? '（已过期）' : '（未过期）'));
+                }
+                if (typeof payload.iat === 'number') {
+                    lines.push('iat: ' + new Date(payload.iat * 1000).toLocaleString('zh-CN', { hour12: false }));
+                }
+                output.value = lines.join('\n');
+                showPanelStatus('jwtStatus', '✅ 解码完成', true);
+            } catch (error) {
+                output.value = '';
+                showPanelStatus('jwtStatus', '❌ 解码失败：' + error.message, false);
+            }
+        }
+
+
         // 更新滚动监听的sections列表
         window.addEventListener('scroll', function() {
             clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(function() {
-                const sections = ['converter-section', 'barcode-section', 'random-text-section', 'unicode-section'];
+                const sections = ['converter-section', 'barcode-section', 'random-text-section', 'unicode-section', 'json-section', 'textdiff-section', 'codec-section', 'jwt-section'];
                 const menuItems = document.querySelectorAll('.menu-item');
 
                 let currentSection = '';
